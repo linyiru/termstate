@@ -1,0 +1,68 @@
+{
+  "spec": "Program Status Protocol (OSC 7501)",
+  "revision": "0.4",
+  "note": "Every normative statement of the spec, quoted verbatim. scripts/check-trace.py verifies each quote still appears in the live spec and that every requirement in a testable scope is covered by at least one vector. Scopes: parse (body to message), scan (byte stream framing), encode (program side), store (record set), detect (feature detection on a tty), presentation (how a terminal shows records: out of scope for a library, listed for completeness).",
+  "requirements": [
+    { "id": "SYN-FRAME", "section": "Syntax", "scope": "scan", "quote": "OSC 7501 ; pairs ST report OSC 7501 ; ? ST feature detection" },
+    { "id": "SYN-ST", "section": "Conventions", "scope": "scan", "quote": "ST | ESC \\, that is 0x1B 0x5C, or BEL, that is 0x07" },
+    { "id": "SYN-PAIRS", "section": "Syntax", "scope": "parse", "quote": "The body is a list of key=value pairs separated by : and nothing else." },
+    { "id": "SYN-KEY", "section": "Syntax", "scope": "parse", "quote": "key := [a-z]+" },
+    { "id": "SYN-VALUE", "section": "Syntax", "scope": "parse", "quote": "value := [A-Za-z0-9_.,+/=-]*" },
+    { "id": "SYN-WS", "section": "Syntax", "scope": "parse", "quote": "Whitespace around keys and values is removed." },
+    { "id": "SYN-MALFORMED", "section": "Syntax", "scope": "parse", "quote": "A malformed pair (no =, empty key, or a byte outside the value set) is skipped and the rest of the report is still processed." },
+    { "id": "SYN-UNKNOWN", "section": "Syntax", "level": "MUST", "scope": "parse", "quote": "Unknown keys MUST be ignored." },
+    { "id": "SYN-REPEAT", "section": "Syntax", "scope": "parse", "quote": "If a key repeats, the last value wins." },
+    { "id": "SYN-B64", "section": "Syntax", "scope": "parse", "quote": "Free-text values (msg, title) are standard base64 of UTF-8 text." },
+    { "id": "SYN-B64-PAD", "section": "Syntax", "scope": "parse", "quote": "Padding is optional." },
+    { "id": "SYN-CTRL", "section": "Syntax", "level": "MUST", "scope": "parse", "quote": "The decoded text MUST NOT contain control characters (U+0000–U+001F, U+007F, U+0080–U+009F), including newline or tab." },
+    { "id": "SYN-DISCARD", "section": "Syntax", "scope": "parse", "quote": "A report is discarded whole if it exceeds one of the limits, if its base64 does not decode, or if decoded text contains a control character. Nothing from a discarded report is applied." },
+
+    { "id": "REC-ROOT", "section": "Records and ids", "scope": "parse", "quote": "A report with no id addresses the root record." },
+    { "id": "REC-ID-GRAMMAR", "section": "Records and ids", "scope": "parse", "quote": "id := segment (\"/\" segment)* segment := [A-Za-z0-9_.+-]{1,32}" },
+    { "id": "REC-REPLACE", "section": "Records and ids", "scope": "store", "quote": "Each report replaces its record completely. A key missing from the report is missing from the record afterwards." },
+    { "id": "REC-ID-INVALID", "section": "Records and ids", "scope": "parse", "quote": "A report whose id does not match this grammar is ignored." },
+    { "id": "REC-PARENT", "section": "Records and ids", "scope": "store", "quote": "A parent does not have to exist." },
+    { "id": "REC-HIERARCHY", "section": "Records and ids", "level": "MUST", "scope": "store", "quote": "Terminals MUST use this relationship for clearing (see States) and app inheritance (see Keys), and MAY use it for grouping." },
+    { "id": "REC-COEXIST", "section": "Records and ids", "scope": "store", "quote": "Root and child records exist at the same time." },
+    { "id": "REC-SCREEN", "section": "Records and ids", "scope": "presentation", "quote": "Switching between the primary and alternate screen has no effect on them.", "untested_reason": "The store has no notion of screens, so nothing can switch them." },
+    { "id": "REC-RIS", "section": "Records and ids", "scope": "store", "quote": "A full reset (RIS) removes every record. A soft reset (DECSTR) does not." },
+
+    { "id": "ST-REQUIRED", "section": "States", "scope": "parse", "quote": "The state key is required. A report with no state, or one the terminal does not recognize, is ignored." },
+    { "id": "ST-CLEAR", "section": "States", "scope": "store", "quote": "Removes the addressed record and every record beneath it. With no id, removes every record on the terminal." },
+    { "id": "ST-LIFETIME-DROP", "section": "States", "level": "MUST", "scope": "store", "quote": "the terminal MUST drop working and blocked records and MAY drop idle ones." },
+    { "id": "ST-LIFETIME-KEEP", "section": "States", "scope": "store", "quote": "done and error survive both events." },
+    { "id": "ST-NO-HEARTBEAT", "section": "States", "level": "MUST NOT", "scope": "store", "quote": "terminals MUST NOT require re-sending to keep a record alive." },
+
+    { "id": "KEY-KIND-BLOCKED", "section": "Keys", "scope": "parse", "quote": "With blocked only, ignored otherwise." },
+    { "id": "KEY-KIND-UNKNOWN", "section": "Keys", "scope": "parse", "quote": "Unrecognized values are treated as absent." },
+    { "id": "KEY-PROGRESS-STATE", "section": "Keys", "scope": "parse", "quote": "With working or blocked, ignored otherwise." },
+    { "id": "KEY-PROGRESS-RANGE", "section": "Keys", "scope": "parse", "quote": "Absent means indeterminate: the program is busy but has no percentage to report. Anything else is treated as absent." },
+    { "id": "KEY-APP-INHERIT", "section": "Keys", "scope": "store", "quote": "A record without app takes it from its nearest ancestor that has one." },
+    { "id": "KEY-APP-INVALID", "section": "Keys", "scope": "parse", "quote": "A value outside the character set is treated as absent." },
+
+    { "id": "FD-REPLY", "section": "Feature detection", "level": "MUST", "scope": "encode", "quote": "A supporting terminal MUST reply with ?." },
+    { "id": "FD-DEFAULT-STATES", "section": "Feature detection", "scope": "parse", "quote": "A reply without states means exactly idle, working, done, blocked, and error." },
+    { "id": "FD-DEFAULT-KINDS", "section": "Feature detection", "scope": "parse", "quote": "A reply without kinds means exactly permission, question, and auth." },
+    { "id": "FD-IGNORE", "section": "Feature detection", "level": "MUST", "scope": "parse", "quote": "Programs MUST ignore pairs in the reply that they do not understand." },
+    { "id": "FD-DA1", "section": "Feature detection", "scope": "detect", "quote": "To avoid waiting, send primary device attributes (CSI c) right after the query.", "untested_reason": "Needs a real tty; covered by termstate::detect unit tests on a fake reply stream once that crate lands." },
+
+    { "id": "SEC-REFUSE-CTRL", "section": "Security", "level": "MUST", "scope": "parse", "quote": "Terminals MUST refuse a report whose decoded msg or title contains a control character" },
+    { "id": "SEC-NO-MARKUP", "section": "Security", "level": "MUST NOT", "scope": "presentation", "quote": "MUST NOT treat either as markup", "untested_reason": "Display concern. The library only hands out plain strings." },
+    { "id": "SEC-BIDI", "section": "Security", "level": "SHOULD", "scope": "presentation", "quote": "SHOULD disarm text direction overrides and other invisible formatting characters when showing them outside the terminal grid.", "untested_reason": "Display concern. A helper is planned." },
+    { "id": "SEC-WRITEBACK", "section": "Security", "scope": "encode", "quote": "The only bytes a terminal writes back are the feature detection reply, which contains nothing from any report." },
+    { "id": "SEC-SOURCE", "section": "Security", "level": "SHOULD", "scope": "presentation", "quote": "Anything a terminal shows from a record SHOULD say which terminal it came from", "untested_reason": "Display concern. One Store per terminal makes the source explicit." },
+    { "id": "SEC-RATE", "section": "Security", "level": "SHOULD", "scope": "presentation", "quote": "Terminals SHOULD rate-limit anything a record causes outside the terminal, such as desktop notifications or sounds.", "untested_reason": "Display concern." },
+
+    { "id": "LIM-ATOMIC", "section": "Limits", "scope": "store", "quote": "A report that breaks a limit is discarded whole. Check every pair before touching any stored record." },
+    { "id": "LIM-SEQUENCE", "section": "Limits", "scope": "scan", "quote": "Whole sequence, OSC through ST | 4096 bytes." },
+    { "id": "LIM-LARGEST", "section": "Limits", "scope": "encode", "quote": "The largest legal report is under 3300." },
+    { "id": "LIM-KEY", "section": "Limits", "scope": "parse", "quote": "Key length | 16 bytes" },
+    { "id": "LIM-MSG", "section": "Limits", "scope": "parse", "quote": "msg | 2732 bytes encoded, 2048 decoded. Check the encoded size before decoding." },
+    { "id": "LIM-TITLE", "section": "Limits", "scope": "parse", "quote": "title | 256 bytes encoded, 192 decoded" },
+    { "id": "LIM-APP", "section": "Limits", "scope": "parse", "quote": "app | 32 bytes" },
+    { "id": "LIM-ID", "section": "Limits", "scope": "parse", "quote": "id | 128 bytes total, 32 per segment, 8 levels deep" },
+    { "id": "LIM-RECORDS", "section": "Limits", "scope": "store", "quote": "Records per terminal | 256. Terminals MUST support at least 64. When a report would create a record past the cap, the record that was updated least recently is removed to make room." },
+
+    { "id": "REL-OSC94", "section": "Relationship to other sequences", "level": "MAY", "scope": "presentation", "quote": "Terminals MAY map OSC 9;4 to the root record of this protocol.", "untested_reason": "Optional; not implemented." }
+  ]
+}
