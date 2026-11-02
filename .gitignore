@@ -1,0 +1,4 @@
+/target
+/.spec-cache
+*.profraw
+lcov.info

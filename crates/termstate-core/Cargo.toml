@@ -1,0 +1,20 @@
+[package]
+name = "termstate-core"
+description = "no_std, allocation-free parser, encoder and stream scanner for OSC 7501 (Program Status Protocol)"
+readme = "../../README.md"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[features]
+default = []
+# Owned conversions and `sanitize` helpers.
+alloc = []
+
+[lints]
+workspace = true
