@@ -1,6 +1,6 @@
 {
   "name": "termstate",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Terminal program status (OSC 7501, Program Status Protocol) for JavaScript; re-exports osc7501",
   "type": "module",
   "exports": {
@@ -13,7 +13,7 @@
   "files": ["index.js", "index.d.ts", "README.md"],
   "engines": { "node": ">=18" },
   "dependencies": {
-    "osc7501": "0.0.1"
+    "osc7501": "0.0.2"
   },
   "keywords": ["osc7501", "program-status", "terminal", "escape-sequence"],
   "license": "MIT OR Apache-2.0",

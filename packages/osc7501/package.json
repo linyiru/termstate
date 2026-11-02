@@ -1,6 +1,6 @@
 {
   "name": "osc7501",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "OSC 7501 (Program Status Protocol): encode and parse terminal program-status reports, conformance-tested",
   "type": "module",
   "exports": {
