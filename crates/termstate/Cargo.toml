@@ -1,0 +1,19 @@
+[package]
+name = "termstate"
+description = "OSC 7501 (Program Status Protocol) for Rust: report program status to the terminal, or parse and keep it on the terminal side"
+readme = "../../README.md"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+termstate-core = { workspace = true, features = ["alloc"] }
+termstate-store = { workspace = true }
+
+[lints]
+workspace = true

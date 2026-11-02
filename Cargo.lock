@@ -330,6 +330,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "termstate"
+version = "0.0.1"
+dependencies = [
+ "termstate-core",
+ "termstate-store",
+]
+
+[[package]]
 name = "termstate-conformance"
 version = "0.0.1"
 dependencies = [
