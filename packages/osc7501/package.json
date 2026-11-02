@@ -1,0 +1,28 @@
+{
+  "name": "osc7501",
+  "version": "0.0.1",
+  "description": "OSC 7501 (Program Status Protocol): encode and parse terminal program-status reports, conformance-tested",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    }
+  },
+  "types": "./index.d.ts",
+  "files": ["index.js", "index.d.ts", "README.md"],
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  },
+  "keywords": ["osc7501", "osc-7501", "program-status", "terminal", "escape-sequence", "ghostty"],
+  "license": "MIT OR Apache-2.0",
+  "author": "Lawrence Lin",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/linyiru/termstate.git",
+    "directory": "packages/osc7501"
+  },
+  "homepage": "https://github.com/linyiru/termstate#readme",
+  "bugs": "https://github.com/linyiru/termstate/issues"
+}
