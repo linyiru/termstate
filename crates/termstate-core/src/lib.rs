@@ -36,6 +36,7 @@ mod model;
 mod parse;
 mod text;
 
+pub mod detect;
 pub mod limits;
 pub mod scan;
 

@@ -44,7 +44,7 @@
     { "id": "FD-DEFAULT-STATES", "section": "Feature detection", "scope": "parse", "quote": "A reply without states means exactly idle, working, done, blocked, and error." },
     { "id": "FD-DEFAULT-KINDS", "section": "Feature detection", "scope": "parse", "quote": "A reply without kinds means exactly permission, question, and auth." },
     { "id": "FD-IGNORE", "section": "Feature detection", "level": "MUST", "scope": "parse", "quote": "Programs MUST ignore pairs in the reply that they do not understand." },
-    { "id": "FD-DA1", "section": "Feature detection", "scope": "detect", "quote": "To avoid waiting, send primary device attributes (CSI c) right after the query.", "untested_reason": "Needs a real tty; covered by termstate::detect unit tests on a fake reply stream once that crate lands." },
+    { "id": "FD-DA1", "section": "Feature detection", "scope": "detect", "quote": "To avoid waiting, send primary device attributes (CSI c) right after the query." },
 
     { "id": "SEC-REFUSE-CTRL", "section": "Security", "level": "MUST", "scope": "parse", "quote": "Terminals MUST refuse a report whose decoded msg or title contains a control character" },
     { "id": "SEC-NO-MARKUP", "section": "Security", "level": "MUST NOT", "scope": "presentation", "quote": "MUST NOT treat either as markup", "untested_reason": "Display concern. The library only hands out plain strings." },
