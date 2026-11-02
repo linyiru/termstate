@@ -85,3 +85,43 @@ pub fn records_json(store: &Store) -> Value {
         })
         .collect()
 }
+
+#[cfg(test)]
+mod tests {
+    use termstate_core::{App, Error, Field, Id, Kind, Report, State};
+
+    #[test]
+    fn display_impls() {
+        assert_eq!(State::Blocked.to_string(), "blocked");
+        assert_eq!(Kind::Question.to_string(), "question");
+        assert_eq!(Id::new("a/b").unwrap().to_string(), "a/b");
+        assert_eq!(App::new("cargo").unwrap().to_string(), "cargo");
+        let r = Report::builder(State::Idle).msg("hi").build().unwrap();
+        assert_eq!(r.to_string(), "\x1b]7501;state=idle:msg=aGk=\x1b\\");
+        let msg = r.msg.unwrap();
+        assert_eq!((msg.len(), msg.is_empty(), msg.as_plain()), (2, false, Some("hi")));
+        assert_eq!(msg.decode_into(&mut [0u8; 1]), None);
+    }
+
+    #[test]
+    fn every_error_has_a_message() {
+        let all = [
+            Error::SequenceTooLong,
+            Error::TooLong(Field::Key),
+            Error::InvalidBase64(Field::Msg),
+            Error::InvalidUtf8(Field::Title),
+            Error::ControlCharacter(Field::Id),
+            Error::TooLong(Field::App),
+            Error::TooLong(Field::Progress),
+            Error::MissingState,
+            Error::UnknownState,
+            Error::InvalidId,
+            Error::InvalidApp,
+            Error::InvalidProgress,
+        ];
+        for e in all {
+            assert!(!e.to_string().is_empty());
+        }
+        assert_eq!(Error::TooLong(Field::Msg).to_string(), "msg exceeds its length limit");
+    }
+}

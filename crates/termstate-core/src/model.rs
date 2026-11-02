@@ -220,3 +220,35 @@ pub enum Message<'a> {
     /// nothing).
     Feature(Capabilities),
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn id_navigation() {
+        let id = Id::new("a/b/c").unwrap();
+        let mut segs = id.segments();
+        assert_eq!((segs.next(), segs.next_back()), (Some("a"), Some("c")));
+        assert_eq!(id.parent(), Some(Id::new("a/b").unwrap()));
+        assert_eq!(Id::new("a").unwrap().parent(), None);
+        let a = Id::new("a").unwrap();
+        assert!(a.contains(&id));
+        assert!(a.contains(&a));
+        assert!(!a.contains(&Id::new("ab").unwrap()));
+        assert!(!id.contains(&a));
+    }
+
+    #[test]
+    fn wire_names_round_trip() {
+        for s in State::ALL {
+            assert_eq!(State::from_wire(s.as_str()), Some(s));
+        }
+        for k in Kind::ALL {
+            assert_eq!(Kind::from_wire(k.as_str()), Some(k));
+        }
+        assert_eq!(State::from_wire("clear"), None);
+        assert!(State::Working.is_transient() && State::Blocked.is_transient());
+        assert!(!State::Done.is_transient() && !State::Error.is_transient() && !State::Idle.is_transient());
+    }
+}
