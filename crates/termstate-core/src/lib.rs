@@ -33,6 +33,7 @@ mod caps;
 mod encode;
 mod error;
 mod model;
+mod parse;
 mod text;
 
 pub mod limits;
@@ -41,6 +42,7 @@ pub use caps::{Capabilities, write_query};
 pub use encode::{ReportBuilder, Terminator, write_clear};
 pub use error::{Error, Field};
 pub use model::{App, Id, Kind, Message, Report, State};
+pub use parse::parse_body;
 #[cfg(feature = "alloc")]
 pub use text::sanitize;
 pub use text::Text;
