@@ -1,0 +1,31 @@
+[package]
+name = "termstate-cli"
+description = "termstate: report, detect, decode and strip OSC 7501 (Program Status Protocol) from the shell"
+readme = "README.md"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories = ["command-line-utilities"]
+
+[[bin]]
+name = "termstate"
+path = "src/main.rs"
+
+[dependencies]
+termstate-core = { workspace = true, features = ["alloc"] }
+termstate-store = { workspace = true }
+clap = { version = "4.6", features = ["derive"] }
+serde_json = "1"
+
+[target.'cfg(unix)'.dependencies]
+rustix = { version = "1.1", features = ["termios", "fs"] }
+
+[lints]
+workspace = true
+
+[dev-dependencies]
+serde_json = "1"

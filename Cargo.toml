@@ -4,6 +4,7 @@ members = [
     "crates/termstate-core",
     "crates/termstate-store",
     "crates/termstate",
+    "crates/termstate-cli",
     "crates/conformance",
 ]
 
