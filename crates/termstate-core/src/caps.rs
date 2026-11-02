@@ -110,3 +110,58 @@ pub fn write_query<W: fmt::Write + ?Sized>(w: &mut W, term: Terminator) -> fmt::
     w.write_str("\x1b]7501;?")?;
     w.write_str(term.as_str())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    struct Buf([u8; 256], usize);
+
+    impl fmt::Write for Buf {
+        fn write_str(&mut self, s: &str) -> fmt::Result {
+            self.0.get_mut(self.1..self.1 + s.len()).ok_or(fmt::Error)?.copy_from_slice(s.as_bytes());
+            self.1 += s.len();
+            Ok(())
+        }
+    }
+
+    impl Buf {
+        fn as_str(&self) -> &str {
+            core::str::from_utf8(&self.0[..self.1]).unwrap()
+        }
+    }
+
+    #[test]
+    // spec: FD-REPLY, SEC-WRITEBACK
+    fn reply_is_fixed_text_starting_with_question_mark() {
+        let mut b = Buf([0; 256], 0);
+        Capabilities::default().write_reply(&mut b, Terminator::St).unwrap();
+        // Exactly the spec's example reply: nothing from any report.
+        assert_eq!(
+            b.as_str(),
+            "\x1b]7501;?:states=idle,working,done,blocked,error:kinds=permission,question,auth\x1b\\"
+        );
+        let body = &b.as_str()[7..b.1 - 2];
+        assert_eq!(crate::parse_body(body.as_bytes()), Ok(crate::Message::Feature(Capabilities::default())));
+    }
+
+    #[test]
+    fn reduced_reply_round_trips() {
+        let mut caps = Capabilities::empty();
+        caps.set_state(State::Idle, true);
+        caps.set_state(State::Blocked, true);
+        caps.set_kind(Kind::Auth, true);
+        let mut b = Buf([0; 256], 0);
+        caps.write_reply(&mut b, Terminator::Bel).unwrap();
+        assert_eq!(b.as_str(), "\x1b]7501;?:states=idle,blocked:kinds=auth\x07");
+        let body = &b.as_str()[7..b.1 - 1];
+        assert_eq!(crate::parse_body(body.as_bytes()), Ok(crate::Message::Feature(caps)));
+    }
+
+    #[test]
+    fn query() {
+        let mut b = Buf([0; 256], 0);
+        write_query(&mut b, Terminator::St).unwrap();
+        assert_eq!(b.as_str(), "\x1b]7501;?\x1b\\");
+    }
+}

@@ -250,6 +250,7 @@ mod tests {
     }
 
     #[test]
+    // spec: LIM-LARGEST
     fn largest_legal_report_fits() {
         let msg = core::str::from_utf8(&[b'x'; MAX_MSG_DECODED]).unwrap();
         let title = core::str::from_utf8(&[b'y'; MAX_TITLE_DECODED]).unwrap();
