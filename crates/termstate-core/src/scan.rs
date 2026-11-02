@@ -84,7 +84,7 @@ impl Scanner {
     /// Bytes that might start an OSC 7501 sequence are held back until the
     /// next call decides; call [`finish`](Self::finish) at end of stream.
     pub fn feed(&mut self, input: &[u8], mut on: impl FnMut(Event<'_>)) {
-        let mut ground_from = Some(0).filter(|_| self.state == St::Ground);
+        let mut ground_from = (self.state == St::Ground).then_some(0);
         let mut i = 0;
         while i < input.len() {
             let b = input[i];

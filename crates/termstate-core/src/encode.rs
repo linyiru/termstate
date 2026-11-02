@@ -130,7 +130,7 @@ impl<'a> ReportBuilder<'a> {
     }
 
     /// One line of text, at most 2048 bytes, no control characters.
-    /// Pass untrusted text through [`sanitize`](crate::sanitize) first.
+    /// Pass untrusted text through `sanitize` (feature `alloc`) first.
     pub fn msg(mut self, msg: &'a str) -> Self {
         self.msg = Some(msg);
         self
