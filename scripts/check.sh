@@ -23,6 +23,12 @@ if rustup target list --installed 2>/dev/null | grep -q thumbv7em-none-eabihf; t
 else
   echo "skipped: rustup target add thumbv7em-none-eabihf"
 fi
+step "js (packages/osc7501)"
+if command -v node >/dev/null; then
+  (cd packages/osc7501 && node --test test/*.test.js >/dev/null && echo "ok")
+else
+  echo "skipped: node not found"
+fi
 step spec
 if [[ "${1:-}" != "--offline" ]]; then python3 -I scripts/fetch-spec.py; fi
 python3 -I scripts/check-trace.py

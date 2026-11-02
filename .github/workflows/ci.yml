@@ -18,6 +18,9 @@ jobs:
           components: rustfmt, clippy, llvm-tools
           targets: thumbv7em-none-eabihf
       - uses: taiki-e/install-action@cargo-llvm-cov
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
       - run: scripts/check.sh
 
   msrv:
