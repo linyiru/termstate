@@ -2,3 +2,4 @@
 /.spec-cache
 *.profraw
 lcov.info
+/.cache
