@@ -22,14 +22,20 @@ const fn kind_bit(k: Kind) -> u8 {
 
 impl Default for Capabilities {
     fn default() -> Self {
-        Capabilities { states: 0b1_1111, kinds: 0b111 }
+        Capabilities {
+            states: 0b1_1111,
+            kinds: 0b111,
+        }
     }
 }
 
 impl Capabilities {
     /// No states and no kinds.
     pub const fn empty() -> Self {
-        Capabilities { states: 0, kinds: 0 }
+        Capabilities {
+            states: 0,
+            kinds: 0,
+        }
     }
 
     /// Whether `state` is accepted.
@@ -44,12 +50,20 @@ impl Capabilities {
 
     /// Adds or removes `state`.
     pub fn set_state(&mut self, state: State, on: bool) {
-        if on { self.states |= state_bit(state) } else { self.states &= !state_bit(state) }
+        if on {
+            self.states |= state_bit(state)
+        } else {
+            self.states &= !state_bit(state)
+        }
     }
 
     /// Adds or removes `kind`.
     pub fn set_kind(&mut self, kind: Kind, on: bool) {
-        if on { self.kinds |= kind_bit(kind) } else { self.kinds &= !kind_bit(kind) }
+        if on {
+            self.kinds |= kind_bit(kind)
+        } else {
+            self.kinds &= !kind_bit(kind)
+        }
     }
 
     /// Accepted states, in spec order.
@@ -68,11 +82,15 @@ impl Capabilities {
         match key {
             "states" => {
                 self.states = 0;
-                items.filter_map(State::from_wire).for_each(|s| self.set_state(s, true));
+                items
+                    .filter_map(State::from_wire)
+                    .for_each(|s| self.set_state(s, true));
             }
             "kinds" => {
                 self.kinds = 0;
-                items.filter_map(Kind::from_wire).for_each(|k| self.set_kind(k, true));
+                items
+                    .filter_map(Kind::from_wire)
+                    .for_each(|k| self.set_kind(k, true));
             }
             _ => {}
         }
@@ -119,7 +137,10 @@ mod tests {
 
     impl fmt::Write for Buf {
         fn write_str(&mut self, s: &str) -> fmt::Result {
-            self.0.get_mut(self.1..self.1 + s.len()).ok_or(fmt::Error)?.copy_from_slice(s.as_bytes());
+            self.0
+                .get_mut(self.1..self.1 + s.len())
+                .ok_or(fmt::Error)?
+                .copy_from_slice(s.as_bytes());
             self.1 += s.len();
             Ok(())
         }
@@ -135,14 +156,19 @@ mod tests {
     // spec: FD-REPLY, SEC-WRITEBACK
     fn reply_is_fixed_text_starting_with_question_mark() {
         let mut b = Buf([0; 256], 0);
-        Capabilities::default().write_reply(&mut b, Terminator::St).unwrap();
+        Capabilities::default()
+            .write_reply(&mut b, Terminator::St)
+            .unwrap();
         // Exactly the spec's example reply: nothing from any report.
         assert_eq!(
             b.as_str(),
             "\x1b]7501;?:states=idle,working,done,blocked,error:kinds=permission,question,auth\x1b\\"
         );
         let body = &b.as_str()[7..b.1 - 2];
-        assert_eq!(crate::parse_body(body.as_bytes()), Ok(crate::Message::Feature(Capabilities::default())));
+        assert_eq!(
+            crate::parse_body(body.as_bytes()),
+            Ok(crate::Message::Feature(Capabilities::default()))
+        );
     }
 
     #[test]
@@ -155,7 +181,10 @@ mod tests {
         caps.write_reply(&mut b, Terminator::Bel).unwrap();
         assert_eq!(b.as_str(), "\x1b]7501;?:states=idle,blocked:kinds=auth\x07");
         let body = &b.as_str()[7..b.1 - 1];
-        assert_eq!(crate::parse_body(body.as_bytes()), Ok(crate::Message::Feature(caps)));
+        assert_eq!(
+            crate::parse_body(body.as_bytes()),
+            Ok(crate::Message::Feature(caps))
+        );
     }
 
     #[test]

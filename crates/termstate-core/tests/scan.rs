@@ -39,9 +39,10 @@ fn scan_chunks<'a>(chunks: impl IntoIterator<Item = &'a [u8]>) -> Vec<Ev> {
                 out.push(Ev::Bytes(b.to_vec()));
             }
         }
-        Event::Sequence { message, terminator } => {
-            out.push(Ev::Seq(message.map(|m| describe(&m)), terminator))
-        }
+        Event::Sequence {
+            message,
+            terminator,
+        } => out.push(Ev::Seq(message.map(|m| describe(&m)), terminator)),
     };
     let mut s = Scanner::new();
     for c in chunks {
@@ -116,12 +117,18 @@ fn length_limit_counts_osc_through_st() {
     assert_eq!(bel.len(), 4096);
     assert!(matches!(&scan(bel.as_bytes())[0], Ev::Seq(Ok(_), _)));
     let st = format!("\x1b]7501;{body}\x1b\\");
-    assert_eq!(scan(st.as_bytes())[0], Ev::Seq(Err(Error::SequenceTooLong), Terminator::St));
+    assert_eq!(
+        scan(st.as_bytes())[0],
+        Ev::Seq(Err(Error::SequenceTooLong), Terminator::St)
+    );
 
     let huge = format!("\x1b]7501;state=idle:x={}\x07tail", "a".repeat(100_000));
     assert_eq!(
         scan(huge.as_bytes()),
-        vec![Ev::Seq(Err(Error::SequenceTooLong), Terminator::Bel), bytes("tail")]
+        vec![
+            Ev::Seq(Err(Error::SequenceTooLong), Terminator::Bel),
+            bytes("tail")
+        ]
     );
 }
 
@@ -136,11 +143,18 @@ fn state_is_parsed() {
     let mut s = Scanner::new();
     let mut seen = None;
     s.feed(b"\x1b]7501;state=blocked:kind=auth\x07", |e| {
-        if let Event::Sequence { message: Ok(Message::Report(r)), .. } = e {
+        if let Event::Sequence {
+            message: Ok(Message::Report(r)),
+            ..
+        } = e
+        {
             seen = Some((r.state, r.kind));
         }
     });
-    assert_eq!(seen, Some((State::Blocked, Some(termstate_core::Kind::Auth))));
+    assert_eq!(
+        seen,
+        Some((State::Blocked, Some(termstate_core::Kind::Auth)))
+    );
     assert!(s.is_ground());
 }
 

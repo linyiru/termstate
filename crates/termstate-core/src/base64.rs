@@ -65,7 +65,11 @@ pub(crate) const fn encoded_len(len: usize) -> usize {
 pub(crate) fn encode<W: fmt::Write + ?Sized>(input: &[u8], w: &mut W) -> fmt::Result {
     let mut quad = [0u8; 4];
     for chunk in input.chunks(3) {
-        let b = [chunk[0], *chunk.get(1).unwrap_or(&0), *chunk.get(2).unwrap_or(&0)];
+        let b = [
+            chunk[0],
+            *chunk.get(1).unwrap_or(&0),
+            *chunk.get(2).unwrap_or(&0),
+        ];
         let acc = (b[0] as u32) << 16 | (b[1] as u32) << 8 | b[2] as u32;
         for (i, slot) in quad.iter_mut().enumerate() {
             *slot = if i <= chunk.len() {

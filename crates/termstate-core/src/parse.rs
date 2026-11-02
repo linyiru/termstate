@@ -42,13 +42,17 @@ enum Pair<'a> {
 
 /// Splits one pair. Both halves are ASCII by construction.
 fn split_pair(part: &[u8]) -> Pair<'_> {
-    let Some(eq) = part.iter().position(|&b| b == b'=') else { return Pair::Malformed };
+    let Some(eq) = part.iter().position(|&b| b == b'=') else {
+        return Pair::Malformed;
+    };
     let key = trim(&part[..eq]);
     let value = trim(&part[eq + 1..]);
     if key.is_empty() || !key.iter().all(u8::is_ascii_lowercase) {
         return Pair::Malformed;
     }
-    let Ok(key) = core::str::from_utf8(key) else { return Pair::Malformed };
+    let Ok(key) = core::str::from_utf8(key) else {
+        return Pair::Malformed;
+    };
     match core::str::from_utf8(value) {
         Ok(v) if v.bytes().all(is_value_byte) => Pair::Ok(key, v),
         _ => Pair::BadValue(key),
@@ -131,10 +135,20 @@ pub fn parse_body(body: &[u8]) -> Result<Message<'_>, Error> {
                 app = Some(value);
             }
             "title" => {
-                title = Some(Text::encoded(value, Field::Title, MAX_TITLE_ENCODED, MAX_TITLE_DECODED)?);
+                title = Some(Text::encoded(
+                    value,
+                    Field::Title,
+                    MAX_TITLE_ENCODED,
+                    MAX_TITLE_DECODED,
+                )?);
             }
             "msg" => {
-                msg = Some(Text::encoded(value, Field::Msg, MAX_MSG_ENCODED, MAX_MSG_DECODED)?);
+                msg = Some(Text::encoded(
+                    value,
+                    Field::Msg,
+                    MAX_MSG_ENCODED,
+                    MAX_MSG_DECODED,
+                )?);
             }
             _ => {}
         }
@@ -154,8 +168,12 @@ pub fn parse_body(body: &[u8]) -> Result<Message<'_>, Error> {
     Ok(Message::Report(Report {
         state,
         id,
-        kind: kind.filter(|_| state == State::Blocked).and_then(Kind::from_wire),
-        progress: progress.filter(|_| state.allows_progress()).and_then(parse_progress),
+        kind: kind
+            .filter(|_| state == State::Blocked)
+            .and_then(Kind::from_wire),
+        progress: progress
+            .filter(|_| state.allows_progress())
+            .and_then(parse_progress),
         app: app.and_then(|a| App::new(a).ok()),
         title,
         msg,
@@ -190,7 +208,15 @@ mod tests {
 
     #[test]
     fn progress_values() {
-        for (v, want) in [("0", Some(0)), ("100", Some(100)), ("0042", Some(42)), ("101", None), ("4.5", None), ("", None), ("99999999999999999999", None)] {
+        for (v, want) in [
+            ("0", Some(0)),
+            ("100", Some(100)),
+            ("0042", Some(42)),
+            ("101", None),
+            ("4.5", None),
+            ("", None),
+            ("99999999999999999999", None),
+        ] {
             assert_eq!(parse_progress(v), want, "{v}");
         }
     }
@@ -204,11 +230,17 @@ mod tests {
 
     #[test]
     fn feature() {
-        assert_eq!(parse_body(b"?"), Ok(Message::Feature(Capabilities::default())));
+        assert_eq!(
+            parse_body(b"?"),
+            Ok(Message::Feature(Capabilities::default()))
+        );
         let Ok(Message::Feature(c)) = parse_body(b"? : states=idle,done,future : kinds=") else {
             panic!()
         };
-        assert_eq!(c.states().collect::<heapless_vec::V<State>>().0, [Some(State::Idle), Some(State::Done), None, None, None]);
+        assert_eq!(
+            c.states().collect::<heapless_vec::V<State>>().0,
+            [Some(State::Idle), Some(State::Done), None, None, None]
+        );
         assert_eq!(c.kinds().count(), 0);
     }
 

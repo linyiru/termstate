@@ -153,7 +153,9 @@ impl Store {
 
     /// All records, ordered by id with the root first.
     pub fn iter(&self) -> impl Iterator<Item = (Option<&str>, &Record)> {
-        self.records.iter().map(|(k, e)| ((!k.is_empty()).then_some(k.as_str()), &e.record))
+        self.records
+            .iter()
+            .map(|(k, e)| ((!k.is_empty()).then_some(k.as_str()), &e.record))
     }
 
     /// The `app` of the record, or of its nearest ancestor record that has
@@ -186,7 +188,10 @@ impl Store {
         let mut changes = Vec::new();
         let k = key(report.id.map(|i| i.as_str()));
         self.clock += 1;
-        let entry = Entry { record: Record::from_report(report), touched: self.clock };
+        let entry = Entry {
+            record: Record::from_report(report),
+            touched: self.clock,
+        };
         if let Some(existing) = self.records.get_mut(k) {
             *existing = entry;
         } else {
@@ -238,8 +243,12 @@ impl Store {
     }
 
     fn remove_where(&mut self, mut pred: impl FnMut(&str, &Record) -> bool) -> Vec<Change> {
-        let doomed: Vec<String> =
-            self.records.iter().filter(|(k, e)| pred(k, &e.record)).map(|(k, _)| k.clone()).collect();
+        let doomed: Vec<String> = self
+            .records
+            .iter()
+            .filter(|(k, e)| pred(k, &e.record))
+            .map(|(k, _)| k.clone())
+            .collect();
         doomed
             .into_iter()
             .map(|k| {
@@ -276,10 +285,16 @@ mod tests {
             apply(&mut s, &alloc::format!("state=idle:id=r{i}"));
         }
         // Touch r0 so r1 becomes the least recently updated.
-        assert_eq!(apply(&mut s, "state=done:id=r0"), [Change::Set(Some("r0".into()))]);
+        assert_eq!(
+            apply(&mut s, "state=done:id=r0"),
+            [Change::Set(Some("r0".into()))]
+        );
         assert_eq!(
             apply(&mut s, "state=idle:id=new"),
-            [Change::Evicted(Some("r1".into())), Change::Set(Some("new".into()))]
+            [
+                Change::Evicted(Some("r1".into())),
+                Change::Set(Some("new".into()))
+            ]
         );
         assert_eq!(s.len(), MIN_RECORDS);
     }

@@ -99,7 +99,10 @@ mod tests {
         let r = Report::builder(State::Idle).msg("hi").build().unwrap();
         assert_eq!(r.to_string(), "\x1b]7501;state=idle:msg=aGk=\x1b\\");
         let msg = r.msg.unwrap();
-        assert_eq!((msg.len(), msg.is_empty(), msg.as_plain()), (2, false, Some("hi")));
+        assert_eq!(
+            (msg.len(), msg.is_empty(), msg.as_plain()),
+            (2, false, Some("hi"))
+        );
         assert_eq!(msg.decode_into(&mut [0u8; 1]), None);
     }
 
@@ -122,6 +125,9 @@ mod tests {
         for e in all {
             assert!(!e.to_string().is_empty());
         }
-        assert_eq!(Error::TooLong(Field::Msg).to_string(), "msg exceeds its length limit");
+        assert_eq!(
+            Error::TooLong(Field::Msg).to_string(),
+            "msg exceeds its length limit"
+        );
     }
 }

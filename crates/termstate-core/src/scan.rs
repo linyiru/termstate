@@ -64,14 +64,22 @@ impl Default for Scanner {
 
 impl core::fmt::Debug for Scanner {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        f.debug_struct("Scanner").field("state", &self.state).field("len", &self.len).finish()
+        f.debug_struct("Scanner")
+            .field("state", &self.state)
+            .field("len", &self.len)
+            .finish()
     }
 }
 
 impl Scanner {
     /// A scanner in the ground state.
     pub const fn new() -> Self {
-        Scanner { body: [0; MAX_BODY], len: 0, overflow: false, state: St::Ground }
+        Scanner {
+            body: [0; MAX_BODY],
+            len: 0,
+            overflow: false,
+            state: St::Ground,
+        }
     }
 
     /// Whether the scanner is between sequences, holding nothing back.
@@ -173,7 +181,10 @@ impl Scanner {
         } else {
             parse_body(&self.body[..self.len])
         };
-        on(Event::Sequence { message, terminator });
+        on(Event::Sequence {
+            message,
+            terminator,
+        });
         self.state = St::Ground;
         self.len = 0;
         self.overflow = false;

@@ -41,7 +41,15 @@ pub struct ReportBuilder<'a> {
 impl<'a> Report<'a> {
     /// Starts a report in `state`.
     pub fn builder(state: State) -> ReportBuilder<'a> {
-        ReportBuilder { state, id: None, kind: None, progress: None, app: None, title: None, msg: None }
+        ReportBuilder {
+            state,
+            id: None,
+            kind: None,
+            progress: None,
+            app: None,
+            title: None,
+            msg: None,
+        }
     }
 
     /// Writes the full sequence, `OSC 7501 ; pairs ST`, in canonical key
@@ -83,7 +91,18 @@ impl<'a> Report<'a> {
             + self.state.as_str().len()
             + opt("id", self.id.map(|i| i.as_str().len()))
             + opt("kind", self.kind.map(|k| k.as_str().len()))
-            + opt("progress", self.progress.map(|p| if p >= 100 { 3 } else if p >= 10 { 2 } else { 1 }))
+            + opt(
+                "progress",
+                self.progress.map(|p| {
+                    if p >= 100 {
+                        3
+                    } else if p >= 10 {
+                        2
+                    } else {
+                        1
+                    }
+                }),
+            )
             + opt("app", self.app.map(|a| a.as_str().len()))
             + opt("title", self.title.map(|t| t.base64_len()))
             + opt("msg", self.msg.map(|m| m.base64_len()))
@@ -149,8 +168,14 @@ impl<'a> ReportBuilder<'a> {
             kind: self.kind.filter(|_| state == State::Blocked),
             progress: self.progress.filter(|_| state.allows_progress()),
             app: self.app.map(App::new).transpose()?,
-            title: self.title.map(|t| Text::plain(t, Field::Title, MAX_TITLE_DECODED)).transpose()?,
-            msg: self.msg.map(|m| Text::plain(m, Field::Msg, MAX_MSG_DECODED)).transpose()?,
+            title: self
+                .title
+                .map(|t| Text::plain(t, Field::Title, MAX_TITLE_DECODED))
+                .transpose()?,
+            msg: self
+                .msg
+                .map(|m| Text::plain(m, Field::Msg, MAX_MSG_DECODED))
+                .transpose()?,
         };
         if report.encoded_len(Terminator::St) > MAX_SEQUENCE {
             return Err(Error::SequenceTooLong);
@@ -186,7 +211,10 @@ mod tests {
 
     impl Buf {
         fn new() -> Self {
-            Buf { bytes: [0; MAX_SEQUENCE + 16], len: 0 }
+            Buf {
+                bytes: [0; MAX_SEQUENCE + 16],
+                len: 0,
+            }
         }
         fn as_str(&self) -> &str {
             core::str::from_utf8(&self.bytes[..self.len]).unwrap()
@@ -196,7 +224,10 @@ mod tests {
     impl fmt::Write for Buf {
         fn write_str(&mut self, s: &str) -> fmt::Result {
             let end = self.len + s.len();
-            self.bytes.get_mut(self.len..end).ok_or(fmt::Error)?.copy_from_slice(s.as_bytes());
+            self.bytes
+                .get_mut(self.len..end)
+                .ok_or(fmt::Error)?
+                .copy_from_slice(s.as_bytes());
             self.len = end;
             Ok(())
         }
@@ -232,20 +263,42 @@ mod tests {
 
     #[test]
     fn normalizes_keys_the_state_ignores() {
-        let r = Report::builder(State::Done).kind(Kind::Auth).progress(5).build().unwrap();
-        assert_eq!(encode(&r, Terminator::St).as_str(), "\x1b]7501;state=done\x1b\\");
+        let r = Report::builder(State::Done)
+            .kind(Kind::Auth)
+            .progress(5)
+            .build()
+            .unwrap();
+        assert_eq!(
+            encode(&r, Terminator::St).as_str(),
+            "\x1b]7501;state=done\x1b\\"
+        );
     }
 
     #[test]
     fn refuses_what_a_terminal_would_discard() {
         let b = |s| Report::builder(s);
-        assert_eq!(b(State::Working).progress(101).build(), Err(Error::InvalidProgress));
-        assert_eq!(b(State::Idle).msg("a\nb").build(), Err(Error::ControlCharacter(Field::Msg)));
-        assert_eq!(b(State::Idle).title("\u{9b}").build(), Err(Error::ControlCharacter(Field::Title)));
-        assert_eq!(b(State::Idle).app("has space").build(), Err(Error::InvalidApp));
+        assert_eq!(
+            b(State::Working).progress(101).build(),
+            Err(Error::InvalidProgress)
+        );
+        assert_eq!(
+            b(State::Idle).msg("a\nb").build(),
+            Err(Error::ControlCharacter(Field::Msg))
+        );
+        assert_eq!(
+            b(State::Idle).title("\u{9b}").build(),
+            Err(Error::ControlCharacter(Field::Title))
+        );
+        assert_eq!(
+            b(State::Idle).app("has space").build(),
+            Err(Error::InvalidApp)
+        );
         assert_eq!(b(State::Idle).id("a//b").build(), Err(Error::InvalidId));
         let long = core::str::from_utf8(&[b'x'; MAX_MSG_DECODED + 1]).unwrap();
-        assert_eq!(b(State::Idle).msg(long).build(), Err(Error::TooLong(Field::Msg)));
+        assert_eq!(
+            b(State::Idle).msg(long).build(),
+            Err(Error::TooLong(Field::Msg))
+        );
         assert!(b(State::Idle).msg(&long[1..]).build().is_ok());
     }
 

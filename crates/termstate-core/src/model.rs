@@ -22,7 +22,13 @@ pub enum State {
 
 impl State {
     /// Every state in revision 0.4, in spec order.
-    pub const ALL: [State; 5] = [State::Idle, State::Working, State::Done, State::Blocked, State::Error];
+    pub const ALL: [State; 5] = [
+        State::Idle,
+        State::Working,
+        State::Done,
+        State::Blocked,
+        State::Error,
+    ];
 
     /// The wire value.
     pub const fn as_str(self) -> &'static str {
@@ -249,6 +255,10 @@ mod tests {
         }
         assert_eq!(State::from_wire("clear"), None);
         assert!(State::Working.is_transient() && State::Blocked.is_transient());
-        assert!(!State::Done.is_transient() && !State::Error.is_transient() && !State::Idle.is_transient());
+        assert!(
+            !State::Done.is_transient()
+                && !State::Error.is_transient()
+                && !State::Idle.is_transient()
+        );
     }
 }

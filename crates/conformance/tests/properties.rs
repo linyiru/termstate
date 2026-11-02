@@ -6,10 +6,13 @@ use termstate_core::{Message, Report, parse_body};
 /// Bodies built from protocol-shaped pieces, so random input reaches deep paths.
 fn body() -> impl Strategy<Value = Vec<u8>> {
     let pair = prop_oneof![
-        prop::sample::select(vec!["idle", "working", "done", "blocked", "error", "clear", "paused", ""])
-            .prop_map(|s| format!("state={s}")),
+        prop::sample::select(vec![
+            "idle", "working", "done", "blocked", "error", "clear", "paused", ""
+        ])
+        .prop_map(|s| format!("state={s}")),
         "[a-z0-9/._+-]{0,40}".prop_map(|s| format!("id={s}")),
-        prop::sample::select(vec!["permission", "question", "auth", "x"]).prop_map(|s| format!("kind={s}")),
+        prop::sample::select(vec!["permission", "question", "auth", "x"])
+            .prop_map(|s| format!("kind={s}")),
         "[0-9+-]{0,4}".prop_map(|s| format!("progress={s}")),
         "[A-Za-z0-9_.+,/=-]{0,40}".prop_map(|s| format!("app={s}")),
         "[A-Za-z0-9+/=]{0,64}".prop_map(|s| format!("msg={s}")),

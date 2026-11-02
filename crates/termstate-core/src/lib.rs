@@ -44,6 +44,6 @@ pub use encode::{ReportBuilder, Terminator, write_clear};
 pub use error::{Error, Field};
 pub use model::{App, Id, Kind, Message, Report, State};
 pub use parse::parse_body;
+pub use text::Text;
 #[cfg(feature = "alloc")]
 pub use text::sanitize;
-pub use text::Text;

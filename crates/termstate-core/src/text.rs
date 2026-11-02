@@ -15,7 +15,10 @@ pub struct Text<'a>(Repr<'a>);
 #[derive(Clone, Copy, Debug)]
 enum Repr<'a> {
     Plain(&'a str),
-    Base64 { encoded: &'a str, decoded_len: usize },
+    Base64 {
+        encoded: &'a str,
+        decoded_len: usize,
+    },
 }
 
 impl<'a> Text<'a> {
@@ -51,7 +54,10 @@ impl<'a> Text<'a> {
         if text.chars().any(char::is_control) {
             return Err(Error::ControlCharacter(field));
         }
-        Ok(Text(Repr::Base64 { encoded: s, decoded_len }))
+        Ok(Text(Repr::Base64 {
+            encoded: s,
+            decoded_len,
+        }))
     }
 
     /// Decoded length in bytes.
@@ -131,7 +137,11 @@ pub fn sanitize(s: &str, max_bytes: usize) -> alloc::string::String {
     const ELLIPSIS: char = '…';
     let mut out = alloc::string::String::with_capacity(s.len().min(max_bytes));
     let fits = s.len() <= max_bytes;
-    let budget = if fits { max_bytes } else { max_bytes.saturating_sub(ELLIPSIS.len_utf8()) };
+    let budget = if fits {
+        max_bytes
+    } else {
+        max_bytes.saturating_sub(ELLIPSIS.len_utf8())
+    };
     for c in s.chars() {
         let c = if c.is_control() { ' ' } else { c };
         if out.len() + c.len_utf8() > budget {

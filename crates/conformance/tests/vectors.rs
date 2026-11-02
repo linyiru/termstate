@@ -10,7 +10,9 @@ use termstate_core::{Message, Report, parse_body};
 use termstate_store::Store;
 
 fn load(name: &str) -> Vec<Value> {
-    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../spec-tests/vectors").join(name);
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../spec-tests/vectors")
+        .join(name);
     let doc: Value = serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
     doc["cases"].as_array().unwrap().clone()
 }
@@ -22,7 +24,12 @@ fn check(failures: &mut Vec<String>, case: &Value, got: &Value, want: &Value) {
 }
 
 fn finish(file: &str, total: usize, failures: Vec<String>) {
-    assert!(failures.is_empty(), "{} failed checks across {total} {file} cases:\n  {}", failures.len(), failures.join("\n  "));
+    assert!(
+        failures.is_empty(),
+        "{} failed checks across {total} {file} cases:\n  {}",
+        failures.len(),
+        failures.join("\n  ")
+    );
 }
 
 fn parse_json(body: &[u8]) -> Value {
@@ -36,13 +43,27 @@ fn parse_json(body: &[u8]) -> Value {
 fn reencode(r: &Report<'_>) -> String {
     let (title, msg) = (r.title.map(|t| t.to_string()), r.msg.map(|t| t.to_string()));
     let mut b = Report::builder(r.state);
-    if let Some(id) = r.id { b = b.id(id.as_str()); }
-    if let Some(k) = r.kind { b = b.kind(k); }
-    if let Some(p) = r.progress { b = b.progress(p); }
-    if let Some(a) = r.app { b = b.app(a.as_str()); }
-    if let Some(t) = &title { b = b.title(t); }
-    if let Some(m) = &msg { b = b.msg(m); }
-    b.build().expect("a parsed report must be encodable").to_string()
+    if let Some(id) = r.id {
+        b = b.id(id.as_str());
+    }
+    if let Some(k) = r.kind {
+        b = b.kind(k);
+    }
+    if let Some(p) = r.progress {
+        b = b.progress(p);
+    }
+    if let Some(a) = r.app {
+        b = b.app(a.as_str());
+    }
+    if let Some(t) = &title {
+        b = b.title(t);
+    }
+    if let Some(m) = &msg {
+        b = b.msg(m);
+    }
+    b.build()
+        .expect("a parsed report must be encodable")
+        .to_string()
 }
 
 #[test]
@@ -76,7 +97,10 @@ fn scan_vectors() {
             let mut pass: Vec<u8> = Vec::new();
             let mut on = |e: Event<'_>| match e {
                 Event::Passthrough(b) => pass.extend_from_slice(b),
-                Event::Sequence { message, terminator } => {
+                Event::Sequence {
+                    message,
+                    terminator,
+                } => {
                     if !pass.is_empty() {
                         events.push(json!({ "passthrough": String::from_utf8(std::mem::take(&mut pass)).unwrap() }));
                     }
@@ -106,7 +130,9 @@ fn store_vectors() {
     let cases = load("store.json");
     let mut failures = Vec::new();
     for case in &cases {
-        let mut store = case["capacity"].as_u64().map_or_else(Store::new, |c| Store::with_capacity(c as usize));
+        let mut store = case["capacity"]
+            .as_u64()
+            .map_or_else(Store::new, |c| Store::with_capacity(c as usize));
         for step in case["steps"].as_array().unwrap() {
             if let Some(body) = step["report"].as_str() {
                 if let Ok(m) = parse_body(body.as_bytes()) {
