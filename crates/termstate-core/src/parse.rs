@@ -1,7 +1,7 @@
 use crate::caps::Capabilities;
 use crate::error::{Error, Field};
 use crate::limits::{
-    MAX_APP, MAX_BODY, MAX_KEY, MAX_MSG_DECODED, MAX_MSG_ENCODED, MAX_TITLE_DECODED,
+    MAX_APP, MAX_BODY, MAX_ID, MAX_KEY, MAX_MSG_DECODED, MAX_MSG_ENCODED, MAX_TITLE_DECODED,
     MAX_TITLE_ENCODED,
 };
 use crate::model::{App, Id, Kind, Message, Report, State};
@@ -34,8 +34,9 @@ fn is_value_byte(b: u8) -> bool {
 enum Pair<'a> {
     /// A well-formed `key=value`.
     Ok(&'a str, &'a str),
-    /// A valid key whose value has a byte outside the value set.
-    BadValue(&'a str),
+    /// A valid key whose value has a byte outside the value set, with the
+    /// raw value's length.
+    BadValue(&'a str, usize),
     /// No `=`, or an empty or non-`[a-z]` key.
     Malformed,
 }
@@ -55,7 +56,7 @@ fn split_pair(part: &[u8]) -> Pair<'_> {
     };
     match core::str::from_utf8(value) {
         Ok(v) if v.bytes().all(is_value_byte) => Pair::Ok(key, v),
-        _ => Pair::BadValue(key),
+        _ => Pair::BadValue(key, value.len()),
     }
 }
 
@@ -70,6 +71,35 @@ fn parse_progress(v: &str) -> Option<u8> {
     }
     let n: u16 = digits.bytes().fold(0, |n, b| n * 10 + u16::from(b - b'0'));
     (n <= 100).then_some(n as u8)
+}
+
+/// The byte limit of a key's raw value, for keys that have one.
+fn check_limit(key: &str, len: usize) -> Result<(), Error> {
+    let (max, field) = match key {
+        "app" => (MAX_APP, Field::App),
+        "title" => (MAX_TITLE_ENCODED, Field::Title),
+        "msg" => (MAX_MSG_ENCODED, Field::Msg),
+        "id" => (MAX_ID, Field::Id),
+        _ => return Ok(()),
+    };
+    if len > max {
+        Err(Error::TooLong(field))
+    } else {
+        Ok(())
+    }
+}
+
+/// Validates the winning `title` or `msg`. An empty value is absent (INT-16).
+fn decode_text<'a>(
+    value: Option<&'a str>,
+    field: Field,
+    max_encoded: usize,
+    max_decoded: usize,
+) -> Result<Option<Text<'a>>, Error> {
+    match value {
+        None | Some("") => Ok(None),
+        Some(v) => Text::encoded(v, field, max_encoded, max_decoded).map(Some),
+    }
 }
 
 /// Parses the body of one OSC 7501 sequence: the bytes after `ESC ] 7501 ;`
@@ -114,8 +144,13 @@ pub fn parse_body(body: &[u8]) -> Result<Message<'_>, Error> {
             // A malformed pair is skipped, but skipping a malformed `id` would
             // make the report fall back to the root record, which the spec
             // forbids. Treat it as an id that does not match the grammar.
-            Pair::BadValue("id") if !feature => return Err(Error::InvalidId),
-            Pair::BadValue(_) | Pair::Malformed => continue,
+            Pair::BadValue("id", _) if !feature => return Err(Error::InvalidId),
+            // Limits bind even on a value that is skipped for its bytes.
+            Pair::BadValue(k, len) if !feature => {
+                check_limit(k, len)?;
+                continue;
+            }
+            Pair::BadValue(..) | Pair::Malformed => continue,
         };
         if feature {
             caps.apply_pair(key, value);
@@ -123,42 +158,27 @@ pub fn parse_body(body: &[u8]) -> Result<Message<'_>, Error> {
         }
         // Limits are checked on every occurrence, including ones a later
         // repeat overrides: "check every pair before touching any record".
+        // Decoding is checked on the value that wins (see INT-3).
+        check_limit(key, value.len())?;
         match key {
             "state" => state = Some(value),
-            "id" => id = Some(value),
+            "id" => id = Some(Id::new(value)?),
             "kind" => kind = Some(value),
             "progress" => progress = Some(value),
-            "app" => {
-                if value.len() > MAX_APP {
-                    return Err(Error::TooLong(Field::App));
-                }
-                app = Some(value);
-            }
-            "title" => {
-                title = Some(Text::encoded(
-                    value,
-                    Field::Title,
-                    MAX_TITLE_ENCODED,
-                    MAX_TITLE_DECODED,
-                )?);
-            }
-            "msg" => {
-                msg = Some(Text::encoded(
-                    value,
-                    Field::Msg,
-                    MAX_MSG_ENCODED,
-                    MAX_MSG_DECODED,
-                )?);
-            }
+            "app" => app = Some(value),
+            "title" => title = Some(value),
+            "msg" => msg = Some(value),
             _ => {}
         }
     }
+
+    let title = decode_text(title, Field::Title, MAX_TITLE_ENCODED, MAX_TITLE_DECODED)?;
+    let msg = decode_text(msg, Field::Msg, MAX_MSG_ENCODED, MAX_MSG_DECODED)?;
 
     if feature {
         return Ok(Message::Feature(caps));
     }
 
-    let id = id.map(Id::new).transpose()?;
     let state = match state {
         None => return Err(Error::MissingState),
         Some("clear") => return Ok(Message::Clear { id }),

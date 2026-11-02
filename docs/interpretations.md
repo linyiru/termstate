@@ -22,9 +22,12 @@ is ignored.** A segment needs at least one character; only a report with no
 
 ## INT-3
 
-**Limits, base64 and control characters are checked on every occurrence of a
-repeated key, including occurrences a later repeat overrides.** The Limits
-section says "Check every pair before touching any stored record".
+**Limits are checked on every occurrence of a repeated key, including
+occurrences a later repeat overrides, and every `id` occurrence must match
+the grammar. Base64 and control characters are checked only on the `title`
+and `msg` that win.** The Limits section says "Check every pair before
+touching any stored record"; an overridden text value is never decoded or
+shown, so it cannot carry an undecodable or unsafe string. Same as Ghostty.
 
 ## INT-4
 
@@ -57,8 +60,10 @@ the parser from the scanner (see INT-10).
 
 ## INT-9
 
-**Base64 with non-zero trailing bits is accepted** (for example `QR==`
-decodes as `A`). Padding, when present, must be complete and correct.
+**Base64 must be canonical: bits after the last whole byte must be zero**
+(`QR==` discards; `QQ==` is `A`). RFC 4648 §3.5 lets decoders reject
+non-canonical input, and Ghostty's decoder (Zig `std.base64`) does. Padding,
+when present, must be complete and correct.
 
 ## INT-10
 
@@ -69,10 +74,13 @@ new escape sequence. 8-bit C1 OSC/ST (0x9D/0x9C) are not recognized.
 
 ## INT-11
 
-**A body whose first pair is `?` is a feature-detection message.** From a
-program it is the query; from a terminal it is the reply. The parser returns
-the capabilities the body lists (spec defaults for anything not listed) and
-the caller knows which direction it is reading.
+**A body whose first pair is `?` is a feature-detection message**, with
+whitespace around the `?` allowed. From a program it is the query; from a
+terminal it is the reply. The parser returns the capabilities the body lists
+(spec defaults for anything not listed) and the caller knows which direction
+it is reading. Vectors that only make sense as replies carry
+`"direction": "reply"`. Ghostty accepts exactly `?` as a query and does not
+parse replies (it is terminal-side only).
 
 ## INT-12
 
@@ -96,3 +104,16 @@ limits" but "MUST support at least 64".
 **`state=clear` still goes through full validation**: a clear with an invalid
 id, an over-limit pair, or bad base64 in an ignored `msg` is discarded like
 any other report.
+
+## INT-16
+
+**An empty `title` or `msg` (`msg=`) is the same as an absent one.** Nothing
+distinguishes "no message" from "an empty message" for display, and Ghostty
+reads empty text as absent. The builder never sends an empty value.
+
+## INT-17
+
+**A limit binds even on a value that is skipped because of a byte outside the
+value set**: `app=` with 33 bytes including a `!` discards the report, while
+`app=a!` is skipped. A limit is about how much a terminal must look at, not
+about whether the value is usable. Same as Ghostty.

@@ -142,14 +142,15 @@ impl<'a> ReportBuilder<'a> {
         self
     }
 
-    /// Short label, at most 192 bytes, no control characters.
+    /// Short label, at most 192 bytes, no control characters. Empty text is
+    /// the same as no `title`.
     pub fn title(mut self, title: &'a str) -> Self {
         self.title = Some(title);
         self
     }
 
-    /// One line of text, at most 2048 bytes, no control characters.
-    /// Pass untrusted text through `sanitize` (feature `alloc`) first.
+    /// One line of text, at most 2048 bytes, no control characters. Empty
+    /// text is the same as no `msg`. Pass untrusted text through `sanitize` (feature `alloc`) first.
     pub fn msg(mut self, msg: &'a str) -> Self {
         self.msg = Some(msg);
         self
@@ -170,10 +171,12 @@ impl<'a> ReportBuilder<'a> {
             app: self.app.map(App::new).transpose()?,
             title: self
                 .title
+                .filter(|t| !t.is_empty())
                 .map(|t| Text::plain(t, Field::Title, MAX_TITLE_DECODED))
                 .transpose()?,
             msg: self
                 .msg
+                .filter(|m| !m.is_empty())
                 .map(|m| Text::plain(m, Field::Msg, MAX_MSG_DECODED))
                 .transpose()?,
         };

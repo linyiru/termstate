@@ -48,6 +48,16 @@ pub(crate) fn decode(input: &[u8], out: &mut [u8]) -> Option<usize> {
         for (i, &c) in chunk.iter().enumerate() {
             acc |= value(c)? << (18 - 6 * i);
         }
+        // Bits below the last whole byte must be zero (RFC 4648 §3.5,
+        // canonical encoding), as Ghostty's decoder requires (INT-9).
+        let unused: u32 = match chunk.len() {
+            2 => 0xffff,
+            3 => 0xff,
+            _ => 0,
+        };
+        if acc & unused != 0 {
+            return None;
+        }
         let bytes = [(acc >> 16) as u8, (acc >> 8) as u8, acc as u8];
         let take = chunk.len() - 1;
         out.get_mut(n..n + take)?.copy_from_slice(&bytes[..take]);
@@ -126,5 +136,10 @@ mod tests {
         assert!(dec("A===").is_none());
         assert!(dec("AA=A").is_none());
         assert!(dec("AA-_").is_none());
+        // Non-canonical: non-zero bits after the last whole byte.
+        assert!(dec("QR==").is_none());
+        assert!(dec("QR").is_none());
+        assert!(dec("QUJ=").is_none());
+        assert!(dec("QUI=").is_some());
     }
 }

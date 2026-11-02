@@ -55,7 +55,7 @@ proptest! {
             let Ok(Message::Report(back)) = parse_body(&wire.as_bytes()[7..wire.len() - 2]) else {
                 panic!("built report did not parse: {wire:?}");
             };
-            prop_assert_eq!(back.msg.unwrap().to_string(), text);
+            prop_assert_eq!(back.msg.map(|m| m.to_string()).unwrap_or_default(), text);
         }
     }
 }
