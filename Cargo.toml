@@ -2,6 +2,7 @@
 resolver = "3"
 members = [
     "crates/termstate-core",
+    "crates/termstate-store",
 ]
 
 [workspace.package]
@@ -16,6 +17,7 @@ categories = ["command-line-interface", "parser-implementations", "no-std"]
 
 [workspace.dependencies]
 termstate-core = { path = "crates/termstate-core", version = "0.0.1" }
+termstate-store = { path = "crates/termstate-store", version = "0.0.1" }
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

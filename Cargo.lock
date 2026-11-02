@@ -272,6 +272,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "termstate-store"
+version = "0.0.1"
+dependencies = [
+ "termstate-core",
+]
+
+[[package]]
 name = "unarray"
 version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"

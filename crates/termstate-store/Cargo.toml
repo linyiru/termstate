@@ -1,0 +1,18 @@
+[package]
+name = "termstate-store"
+description = "Terminal-side record store for OSC 7501 (Program Status Protocol): replacement, clearing, app inheritance, lifetime and eviction rules"
+readme = "../../README.md"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories = ["command-line-interface", "no-std"]
+
+[dependencies]
+termstate-core = { workspace = true, features = ["alloc"] }
+
+[lints]
+workspace = true
