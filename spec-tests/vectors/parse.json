@@ -1,0 +1,1753 @@
+{
+ "description": "Body (bytes between 'ESC ] 7501 ;' and ST) to decoded message. See ../README.md for the format.",
+ "cases": [
+  {
+   "name": "minimal idle",
+   "covers": [
+    "SYN-PAIRS",
+    "REC-ROOT"
+   ],
+   "body": "state=idle",
+   "expect": {
+    "report": {
+     "state": "idle"
+    }
+   }
+  },
+  {
+   "name": "state idle",
+   "covers": [
+    "ST-REQUIRED"
+   ],
+   "body": "state=idle",
+   "expect": {
+    "report": {
+     "state": "idle"
+    }
+   }
+  },
+  {
+   "name": "state working",
+   "covers": [
+    "ST-REQUIRED"
+   ],
+   "body": "state=working",
+   "expect": {
+    "report": {
+     "state": "working"
+    }
+   }
+  },
+  {
+   "name": "state done",
+   "covers": [
+    "ST-REQUIRED"
+   ],
+   "body": "state=done",
+   "expect": {
+    "report": {
+     "state": "done"
+    }
+   }
+  },
+  {
+   "name": "state blocked",
+   "covers": [
+    "ST-REQUIRED"
+   ],
+   "body": "state=blocked",
+   "expect": {
+    "report": {
+     "state": "blocked"
+    }
+   }
+  },
+  {
+   "name": "state error",
+   "covers": [
+    "ST-REQUIRED"
+   ],
+   "body": "state=error",
+   "expect": {
+    "report": {
+     "state": "error"
+    }
+   }
+  },
+  {
+   "name": "spec terraform example",
+   "covers": [
+    "SYN-B64",
+    "KEY-KIND-BLOCKED"
+   ],
+   "body": "state=blocked:kind=permission:app=terraform:msg=QXBwbHkgMyB0byBhZGQsIDEgdG8gY2hhbmdlLCAwIHRvIGRlc3Ryb3k/",
+   "expect": {
+    "report": {
+     "state": "blocked",
+     "kind": "permission",
+     "app": "terraform",
+     "msg": "Apply 3 to add, 1 to change, 0 to destroy?"
+    }
+   }
+  },
+  {
+   "name": "all keys",
+   "covers": [
+    "SYN-PAIRS",
+    "SYN-B64"
+   ],
+   "body": "state=blocked:id=eu-west:kind=permission:progress=40:app=deploy:title=RVUgV2VzdA==:msg=QXBwcm92ZSBkZXBsb3kgdG8gZXUtd2VzdCAocHJvZHVjdGlvbik/",
+   "expect": {
+    "report": {
+     "state": "blocked",
+     "id": "eu-west",
+     "kind": "permission",
+     "progress": 40,
+     "app": "deploy",
+     "title": "EU West",
+     "msg": "Approve deploy to eu-west (production)?"
+    }
+   }
+  },
+  {
+   "name": "keys in any order",
+   "covers": [
+    "SYN-PAIRS"
+   ],
+   "body": "msg=eA==:app=a:state=working",
+   "expect": {
+    "report": {
+     "state": "working",
+     "app": "a",
+     "msg": "x"
+    }
+   }
+  },
+  {
+   "name": "utf-8 text",
+   "covers": [
+    "SYN-B64"
+   ],
+   "body": "state=done:msg=5a6M5oiQIOKckyDigJQgMTIg5YCL5aWX5Lu2",
+   "expect": {
+    "report": {
+     "state": "done",
+     "msg": "完成 ✓ — 12 個套件"
+    }
+   }
+  },
+  {
+   "name": "spaces around keys and values",
+   "covers": [
+    "SYN-WS"
+   ],
+   "body": " state = working : progress = 40 ",
+   "expect": {
+    "report": {
+     "state": "working",
+     "progress": 40
+    }
+   }
+  },
+  {
+   "name": "tabs around keys and values",
+   "covers": [
+    "SYN-WS"
+   ],
+   "body": "\tstate\t=\tidle\t",
+   "expect": {
+    "report": {
+     "state": "idle"
+    }
+   },
+   "interpretation": "INT-8"
+  },
+  {
+   "name": "space inside a value is malformed",
+   "covers": [
+    "SYN-WS",
+    "SYN-MALFORMED"
+   ],
+   "body": "state=idle:app=my app",
+   "expect": {
+    "report": {
+     "state": "idle"
+    }
+   }
+  },
+  {
+   "name": "pair without equals is skipped",
+   "covers": [
+    "SYN-MALFORMED"
+   ],
+   "body": "state=idle:garbage:app=x",
+   "expect": {
+    "report": {
+     "state": "idle",
+     "app": "x"
+    }
+   }
+  },
+  {
+   "name": "empty key is skipped",
+   "covers": [
+    "SYN-MALFORMED",
+    "SYN-KEY"
+   ],
+   "body": "state=idle:=x:app=x",
+   "expect": {
+    "report": {
+     "state": "idle",
+     "app": "x"
+    }
+   }
+  },
+  {
+   "name": "uppercase key is skipped",
+   "covers": [
+    "SYN-MALFORMED",
+    "SYN-KEY"
+   ],
+   "body": "state=idle:App=x",
+   "expect": {
+    "report": {
+     "state": "idle"
+    }
+   }
+  },
+  {
+   "name": "digit in key is skipped",
+   "covers": [
+    "SYN-MALFORMED",
+    "SYN-KEY"
+   ],
+   "body": "state=idle:app2=x",
+   "expect": {
+    "report": {
+     "state": "idle"
+    }
+   }
+  },
+  {
+   "name": "value byte outside set is skipped",
+   "covers": [
+    "SYN-MALFORMED",
+    "SYN-VALUE"
+   ],
+   "body": "state=idle:app=x!:title=dA==",
+   "expect": {
+    "report": {
+     "state": "idle",
+     "title": "t"
+    }
+   }
+  },
+  {
+   "name": "msg with byte outside value set is skipped, not discarded",
+   "covers": [
+    "SYN-MALFORMED",
+    "SYN-VALUE"
+   ],
+   "body": "state=done:msg=hello world",
+   "expect": {
+    "report": {
+     "state": "done"
+    }
+   }
+  },
+  {
+   "name": "empty pairs are skipped",
+   "covers": [
+    "SYN-MALFORMED"
+   ],
+   "body": "::state=idle::",
+   "expect": {
+    "report": {
+     "state": "idle"
+    }
+   }
+  },
+  {
+   "name": "semicolon in body is a value byte outside the set",
+   "covers": [
+    "SYN-VALUE"
+   ],
+   "body": "state=idle:app=a;b",
+   "expect": {
+    "report": {
+     "state": "idle"
+    }
+   }
+  },
+  {
+   "name": "non-ascii byte in value is skipped",
+   "covers": [
+    "SYN-VALUE"
+   ],
+   "body": "state=idle:app=café",
+   "expect": {
+    "report": {
+     "state": "idle"
+    }
+   }
+  },
+  {
+   "name": "bad state value byte leaves no state",
+   "covers": [
+    "ST-REQUIRED",
+    "SYN-MALFORMED"
+   ],
+   "body": "state=idle!",
+   "expect": {
+    "discard": true
+   }
+  },
+  {
+   "name": "unknown key ignored",
+   "covers": [
+    "SYN-UNKNOWN"
+   ],
+   "body": "state=idle:future=1,2,3:app=x",
+   "expect": {
+    "report": {
+     "state": "idle",
+     "app": "x"
+    }
+   }
+  },
+  {
+   "name": "unknown key with every value byte",
+   "covers": [
+    "SYN-UNKNOWN",
+    "SYN-VALUE"
+   ],
+   "body": "state=idle:zz=Az09_.,+/=-",
+   "expect": {
+    "report": {
+     "state": "idle"
+    }
+   }
+  },
+  {
+   "name": "repeated state, last wins",
+   "covers": [
+    "SYN-REPEAT"
+   ],
+   "body": "state=idle:state=done",
+   "expect": {
+    "report": {
+     "state": "done"
+    }
+   }
+  },
+  {
+   "name": "repeated app, last wins",
+   "covers": [
+    "SYN-REPEAT"
+   ],
+   "body": "state=idle:app=a:app=b",
+   "expect": {
+    "report": {
+     "state": "idle",
+     "app": "b"
+    }
+   }
+  },
+  {
+   "name": "repeated msg, last wins",
+   "covers": [
+    "SYN-REPEAT"
+   ],
+   "body": "state=idle:msg=b25l:msg=dHdv",
+   "expect": {
+    "report": {
+     "state": "idle",
+     "msg": "two"
+    }
+   }
+  },
+  {
+   "name": "repeat with unknown last state is ignored",
+   "covers": [
+    "SYN-REPEAT",
+    "ST-REQUIRED"
+   ],
+   "body": "state=idle:state=paused",
+   "expect": {
+    "discard": true
+   }
+  },
+  {
+   "name": "overridden msg over limit still discards",
+   "covers": [
+    "LIM-MSG",
+    "LIM-ATOMIC"
+   ],
+   "body": "state=idle:msg=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA:msg=b2s=",
+   "expect": {
+    "discard": true
+   },
+   "interpretation": "INT-3"
+  },
+  {
+   "name": "overridden msg with bad base64 still discards",
+   "covers": [
+    "SYN-DISCARD"
+   ],
+   "body": "state=idle:msg=A:msg=b2s=",
+   "expect": {
+    "discard": true
+   },
+   "interpretation": "INT-3"
+  },
+  {
+   "name": "padded base64",
+   "covers": [
+    "SYN-B64-PAD"
+   ],
+   "body": "state=idle:msg=SGk=",
+   "expect": {
+    "report": {
+     "state": "idle",
+     "msg": "Hi"
+    }
+   }
+  },
+  {
+   "name": "unpadded base64",
+   "covers": [
+    "SYN-B64-PAD"
+   ],
+   "body": "state=idle:msg=SGk",
+   "expect": {
+    "report": {
+     "state": "idle",
+     "msg": "Hi"
+    }
+   }
+  },
+  {
+   "name": "unpadded base64 two pad",
+   "covers": [
+    "SYN-B64-PAD"
+   ],
+   "body": "state=idle:msg=SA",
+   "expect": {
+    "report": {
+     "state": "idle",
+     "msg": "H"
+    }
+   }
+  },
+  {
+   "name": "empty msg",
+   "covers": [
+    "SYN-B64"
+   ],
+   "body": "state=idle:msg=",
+   "expect": {
+    "report": {
+     "state": "idle",
+     "msg": ""
+    }
+   }
+  },
+  {
+   "name": "base64 length 1 mod 4 discards",
+   "covers": [
+    "SYN-DISCARD"
+   ],
+   "body": "state=idle:msg=SGk=S",
+   "expect": {
+    "discard": true
+   }
+  },
+  {
+   "name": "single base64 char discards",
+   "covers": [
+    "SYN-DISCARD"
+   ],
+   "body": "state=idle:msg=S",
+   "expect": {
+    "discard": true
+   }
+  },
+  {
+   "name": "excess padding discards",
+   "covers": [
+    "SYN-DISCARD"
+   ],
+   "body": "state=idle:msg=SGk==",
+   "expect": {
+    "discard": true
+   }
+  },
+  {
+   "name": "padding in the middle discards",
+   "covers": [
+    "SYN-DISCARD"
+   ],
+   "body": "state=idle:msg=SG=k",
+   "expect": {
+    "discard": true
+   }
+  },
+  {
+   "name": "base64url alphabet discards",
+   "covers": [
+    "SYN-B64",
+    "SYN-DISCARD"
+   ],
+   "body": "state=idle:msg=-_8=",
+   "expect": {
+    "discard": true
+   }
+  },
+  {
+   "name": "title with byte outside value set is skipped",
+   "covers": [
+    "SYN-VALUE"
+   ],
+   "body": "state=idle:title=@",
+   "expect": {
+    "report": {
+     "state": "idle"
+    }
+   }
+  },
+  {
+   "name": "bad base64 in title (valid bytes) discards",
+   "covers": [
+    "SYN-DISCARD"
+   ],
+   "body": "state=idle:title=A",
+   "expect": {
+    "discard": true
+   }
+  },
+  {
+   "name": "non-zero trailing bits accepted",
+   "covers": [
+    "SYN-B64"
+   ],
+   "body": "state=idle:msg=QR==",
+   "expect": {
+    "report": {
+     "state": "idle",
+     "msg": "A"
+    }
+   },
+   "interpretation": "INT-9"
+  },
+  {
+   "name": "decoded text not utf-8 discards",
+   "covers": [
+    "SYN-B64",
+    "SYN-DISCARD"
+   ],
+   "body": "state=idle:msg=//4=",
+   "expect": {
+    "discard": true
+   },
+   "interpretation": "INT-6"
+  },
+  {
+   "name": "msg with newline discards",
+   "covers": [
+    "SYN-CTRL",
+    "SEC-REFUSE-CTRL",
+    "SYN-DISCARD"
+   ],
+   "body": "state=done:msg=YQpi",
+   "expect": {
+    "discard": true
+   }
+  },
+  {
+   "name": "msg with tab discards",
+   "covers": [
+    "SYN-CTRL",
+    "SEC-REFUSE-CTRL",
+    "SYN-DISCARD"
+   ],
+   "body": "state=done:msg=YQli",
+   "expect": {
+    "discard": true
+   }
+  },
+  {
+   "name": "msg with NUL discards",
+   "covers": [
+    "SYN-CTRL",
+    "SEC-REFUSE-CTRL",
+    "SYN-DISCARD"
+   ],
+   "body": "state=done:msg=YQBi",
+   "expect": {
+    "discard": true
+   }
+  },
+  {
+   "name": "msg with ESC discards",
+   "covers": [
+    "SYN-CTRL",
+    "SEC-REFUSE-CTRL",
+    "SYN-DISCARD"
+   ],
+   "body": "state=done:msg=YRti",
+   "expect": {
+    "discard": true
+   }
+  },
+  {
+   "name": "msg with DEL discards",
+   "covers": [
+    "SYN-CTRL",
+    "SEC-REFUSE-CTRL",
+    "SYN-DISCARD"
+   ],
+   "body": "state=done:msg=YX9i",
+   "expect": {
+    "discard": true
+   }
+  },
+  {
+   "name": "msg with C1 NEL U+0085 discards",
+   "covers": [
+    "SYN-CTRL",
+    "SEC-REFUSE-CTRL",
+    "SYN-DISCARD"
+   ],
+   "body": "state=done:msg=YcKFYg==",
+   "expect": {
+    "discard": true
+   }
+  },
+  {
+   "name": "msg with C1 CSI U+009B discards",
+   "covers": [
+    "SYN-CTRL",
+    "SEC-REFUSE-CTRL",
+    "SYN-DISCARD"
+   ],
+   "body": "state=done:msg=YcKbYg==",
+   "expect": {
+    "discard": true
+   }
+  },
+  {
+   "name": "msg with U+001F discards",
+   "covers": [
+    "SYN-CTRL",
+    "SEC-REFUSE-CTRL",
+    "SYN-DISCARD"
+   ],
+   "body": "state=done:msg=YR9i",
+   "expect": {
+    "discard": true
+   }
+  },
+  {
+   "name": "msg with U+009F discards",
+   "covers": [
+    "SYN-CTRL",
+    "SEC-REFUSE-CTRL",
+    "SYN-DISCARD"
+   ],
+   "body": "state=done:msg=YcKfYg==",
+   "expect": {
+    "discard": true
+   }
+  },
+  {
+   "name": "title with newline discards",
+   "covers": [
+    "SYN-CTRL",
+    "SEC-REFUSE-CTRL"
+   ],
+   "body": "state=done:title=YQo=",
+   "expect": {
+    "discard": true
+   }
+  },
+  {
+   "name": "U+00A0 is not a control character",
+   "covers": [
+    "SYN-CTRL"
+   ],
+   "body": "state=done:msg=YcKgYg==",
+   "expect": {
+    "report": {
+     "state": "done",
+     "msg": "a b"
+    }
+   }
+  },
+  {
+   "name": "bidi override is not refused by the parser",
+   "covers": [
+    "SYN-CTRL"
+   ],
+   "body": "state=done:msg=YeKArmI=",
+   "expect": {
+    "report": {
+     "state": "done",
+     "msg": "a‮b"
+    }
+   }
+  },
+  {
+   "name": "child id",
+   "covers": [
+    "REC-ID-GRAMMAR"
+   ],
+   "body": "state=working:id=build/test",
+   "expect": {
+    "report": {
+     "state": "working",
+     "id": "build/test"
+    }
+   }
+  },
+  {
+   "name": "id with every allowed char",
+   "covers": [
+    "REC-ID-GRAMMAR"
+   ],
+   "body": "state=idle:id=Az09_.+-/x",
+   "expect": {
+    "report": {
+     "state": "idle",
+     "id": "Az09_.+-/x"
+    }
+   }
+  },
+  {
+   "name": "invalid id 'a//b' ignored",
+   "covers": [
+    "REC-ID-INVALID",
+    "REC-ID-GRAMMAR"
+   ],
+   "body": "state=idle:id=a//b",
+   "expect": {
+    "discard": true
+   }
+  },
+  {
+   "name": "invalid id '/a' ignored",
+   "covers": [
+    "REC-ID-INVALID",
+    "REC-ID-GRAMMAR"
+   ],
+   "body": "state=idle:id=/a",
+   "expect": {
+    "discard": true
+   }
+  },
+  {
+   "name": "invalid id 'a/' ignored",
+   "covers": [
+    "REC-ID-INVALID",
+    "REC-ID-GRAMMAR"
+   ],
+   "body": "state=idle:id=a/",
+   "expect": {
+    "discard": true
+   }
+  },
+  {
+   "name": "invalid id 'a,b' ignored",
+   "covers": [
+    "REC-ID-INVALID",
+    "REC-ID-GRAMMAR"
+   ],
+   "body": "state=idle:id=a,b",
+   "expect": {
+    "discard": true
+   }
+  },
+  {
+   "name": "invalid id 'a=b' ignored",
+   "covers": [
+    "REC-ID-INVALID",
+    "REC-ID-GRAMMAR"
+   ],
+   "body": "state=idle:id=a=b",
+   "expect": {
+    "discard": true
+   }
+  },
+  {
+   "name": "invalid id '/' ignored",
+   "covers": [
+    "REC-ID-INVALID",
+    "REC-ID-GRAMMAR"
+   ],
+   "body": "state=idle:id=/",
+   "expect": {
+    "discard": true
+   }
+  },
+  {
+   "name": "id with byte outside value set ignores report",
+   "covers": [
+    "REC-ID-INVALID"
+   ],
+   "body": "state=idle:id=a b",
+   "expect": {
+    "discard": true
+   },
+   "interpretation": "INT-1"
+  },
+  {
+   "name": "id with non-ascii ignores report",
+   "covers": [
+    "REC-ID-INVALID"
+   ],
+   "body": "state=idle:id=café",
+   "expect": {
+    "discard": true
+   },
+   "interpretation": "INT-1"
+  },
+  {
+   "name": "empty id ignores report",
+   "covers": [
+    "REC-ID-INVALID"
+   ],
+   "body": "state=idle:id=",
+   "expect": {
+    "discard": true
+   },
+   "interpretation": "INT-2"
+  },
+  {
+   "name": "id segment 32 bytes",
+   "covers": [
+    "LIM-ID"
+   ],
+   "body": "state=idle:id=ssssssssssssssssssssssssssssssss",
+   "expect": {
+    "report": {
+     "state": "idle",
+     "id": "ssssssssssssssssssssssssssssssss"
+    }
+   }
+  },
+  {
+   "name": "id segment 33 bytes",
+   "covers": [
+    "LIM-ID"
+   ],
+   "body": "state=idle:id=sssssssssssssssssssssssssssssssss",
+   "expect": {
+    "discard": true
+   }
+  },
+  {
+   "name": "id 8 levels",
+   "covers": [
+    "LIM-ID"
+   ],
+   "body": "state=idle:id=a/b/c/d/e/f/g/h",
+   "expect": {
+    "report": {
+     "state": "idle",
+     "id": "a/b/c/d/e/f/g/h"
+    }
+   }
+  },
+  {
+   "name": "id 9 levels",
+   "covers": [
+    "LIM-ID"
+   ],
+   "body": "state=idle:id=a/b/c/d/e/f/g/h/i",
+   "expect": {
+    "discard": true
+   }
+  },
+  {
+   "name": "id 128 bytes",
+   "covers": [
+    "LIM-ID"
+   ],
+   "body": "state=idle:id=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/cccccccccccccccccccccccccccccccc/ddddddddddddddddddddddddddddd",
+   "expect": {
+    "report": {
+     "state": "idle",
+     "id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/cccccccccccccccccccccccccccccccc/ddddddddddddddddddddddddddddd"
+    }
+   }
+  },
+  {
+   "name": "id 129 bytes",
+   "covers": [
+    "LIM-ID"
+   ],
+   "body": "state=idle:id=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/cccccccccccccccccccccccccccccccc/dddddddddddddddddddddddddddddx",
+   "expect": {
+    "discard": true
+   }
+  },
+  {
+   "name": "missing state",
+   "covers": [
+    "ST-REQUIRED"
+   ],
+   "body": "app=x",
+   "expect": {
+    "discard": true
+   }
+  },
+  {
+   "name": "empty state",
+   "covers": [
+    "ST-REQUIRED"
+   ],
+   "body": "state=",
+   "expect": {
+    "discard": true
+   }
+  },
+  {
+   "name": "unknown state",
+   "covers": [
+    "ST-REQUIRED"
+   ],
+   "body": "state=paused",
+   "expect": {
+    "discard": true
+   }
+  },
+  {
+   "name": "state is case-sensitive",
+   "covers": [
+    "ST-REQUIRED"
+   ],
+   "body": "state=IDLE",
+   "expect": {
+    "discard": true
+   }
+  },
+  {
+   "name": "empty body",
+   "covers": [
+    "ST-REQUIRED"
+   ],
+   "body": "",
+   "expect": {
+    "discard": true
+   }
+  },
+  {
+   "name": "clear all",
+   "covers": [
+    "ST-CLEAR"
+   ],
+   "body": "state=clear",
+   "expect": {
+    "clear": {}
+   }
+  },
+  {
+   "name": "clear id",
+   "covers": [
+    "ST-CLEAR"
+   ],
+   "body": "state=clear:id=us-east",
+   "expect": {
+    "clear": {
+     "id": "us-east"
+    }
+   }
+  },
+  {
+   "name": "clear ignores other keys",
+   "covers": [
+    "ST-CLEAR",
+    "SYN-UNKNOWN"
+   ],
+   "body": "state=clear:app=x:progress=4",
+   "expect": {
+    "clear": {}
+   }
+  },
+  {
+   "name": "clear with invalid id ignored",
+   "covers": [
+    "ST-CLEAR",
+    "REC-ID-INVALID"
+   ],
+   "body": "state=clear:id=a//b",
+   "expect": {
+    "discard": true
+   },
+   "interpretation": "INT-15"
+  },
+  {
+   "name": "clear with bad base64 discarded",
+   "covers": [
+    "ST-CLEAR",
+    "SYN-DISCARD"
+   ],
+   "body": "state=clear:msg=S",
+   "expect": {
+    "discard": true
+   },
+   "interpretation": "INT-15"
+  },
+  {
+   "name": "kind permission",
+   "covers": [
+    "KEY-KIND-BLOCKED"
+   ],
+   "body": "state=blocked:kind=permission",
+   "expect": {
+    "report": {
+     "state": "blocked",
+     "kind": "permission"
+    }
+   }
+  },
+  {
+   "name": "kind question",
+   "covers": [
+    "KEY-KIND-BLOCKED"
+   ],
+   "body": "state=blocked:kind=question",
+   "expect": {
+    "report": {
+     "state": "blocked",
+     "kind": "question"
+    }
+   }
+  },
+  {
+   "name": "kind auth",
+   "covers": [
+    "KEY-KIND-BLOCKED"
+   ],
+   "body": "state=blocked:kind=auth",
+   "expect": {
+    "report": {
+     "state": "blocked",
+     "kind": "auth"
+    }
+   }
+  },
+  {
+   "name": "kind ignored unless blocked",
+   "covers": [
+    "KEY-KIND-BLOCKED"
+   ],
+   "body": "state=working:kind=auth",
+   "expect": {
+    "report": {
+     "state": "working"
+    }
+   },
+   "interpretation": "INT-12"
+  },
+  {
+   "name": "unknown kind treated as absent",
+   "covers": [
+    "KEY-KIND-UNKNOWN"
+   ],
+   "body": "state=blocked:kind=payment",
+   "expect": {
+    "report": {
+     "state": "blocked"
+    }
+   }
+  },
+  {
+   "name": "kind is case-sensitive",
+   "covers": [
+    "KEY-KIND-UNKNOWN"
+   ],
+   "body": "state=blocked:kind=Auth",
+   "expect": {
+    "report": {
+     "state": "blocked"
+    }
+   }
+  },
+  {
+   "name": "progress 0",
+   "covers": [
+    "KEY-PROGRESS-RANGE"
+   ],
+   "body": "state=working:progress=0",
+   "expect": {
+    "report": {
+     "state": "working",
+     "progress": 0
+    }
+   }
+  },
+  {
+   "name": "progress 100",
+   "covers": [
+    "KEY-PROGRESS-RANGE"
+   ],
+   "body": "state=working:progress=100",
+   "expect": {
+    "report": {
+     "state": "working",
+     "progress": 100
+    }
+   }
+  },
+  {
+   "name": "progress 40",
+   "covers": [
+    "KEY-PROGRESS-RANGE"
+   ],
+   "body": "state=working:progress=40",
+   "expect": {
+    "report": {
+     "state": "working",
+     "progress": 40
+    }
+   }
+  },
+  {
+   "name": "progress with blocked",
+   "covers": [
+    "KEY-PROGRESS-STATE"
+   ],
+   "body": "state=blocked:progress=50",
+   "expect": {
+    "report": {
+     "state": "blocked",
+     "progress": 50
+    }
+   }
+  },
+  {
+   "name": "progress ignored with idle",
+   "covers": [
+    "KEY-PROGRESS-STATE"
+   ],
+   "body": "state=idle:progress=50",
+   "expect": {
+    "report": {
+     "state": "idle"
+    }
+   },
+   "interpretation": "INT-12"
+  },
+  {
+   "name": "progress ignored with done",
+   "covers": [
+    "KEY-PROGRESS-STATE"
+   ],
+   "body": "state=done:progress=50",
+   "expect": {
+    "report": {
+     "state": "done"
+    }
+   },
+   "interpretation": "INT-12"
+  },
+  {
+   "name": "progress ignored with error",
+   "covers": [
+    "KEY-PROGRESS-STATE"
+   ],
+   "body": "state=error:progress=50",
+   "expect": {
+    "report": {
+     "state": "error"
+    }
+   },
+   "interpretation": "INT-12"
+  },
+  {
+   "name": "progress '101' absent",
+   "covers": [
+    "KEY-PROGRESS-RANGE"
+   ],
+   "body": "state=working:progress=101",
+   "expect": {
+    "report": {
+     "state": "working"
+    }
+   }
+  },
+  {
+   "name": "progress '-1' absent",
+   "covers": [
+    "KEY-PROGRESS-RANGE"
+   ],
+   "body": "state=working:progress=-1",
+   "expect": {
+    "report": {
+     "state": "working"
+    }
+   }
+  },
+  {
+   "name": "progress '+5' absent",
+   "covers": [
+    "KEY-PROGRESS-RANGE"
+   ],
+   "body": "state=working:progress=+5",
+   "expect": {
+    "report": {
+     "state": "working"
+    }
+   }
+  },
+  {
+   "name": "progress '4.5' absent",
+   "covers": [
+    "KEY-PROGRESS-RANGE"
+   ],
+   "body": "state=working:progress=4.5",
+   "expect": {
+    "report": {
+     "state": "working"
+    }
+   }
+  },
+  {
+   "name": "progress '' absent",
+   "covers": [
+    "KEY-PROGRESS-RANGE"
+   ],
+   "body": "state=working:progress=",
+   "expect": {
+    "report": {
+     "state": "working"
+    }
+   }
+  },
+  {
+   "name": "progress 'abc' absent",
+   "covers": [
+    "KEY-PROGRESS-RANGE"
+   ],
+   "body": "state=working:progress=abc",
+   "expect": {
+    "report": {
+     "state": "working"
+    }
+   }
+  },
+  {
+   "name": "progress '1e2' absent",
+   "covers": [
+    "KEY-PROGRESS-RANGE"
+   ],
+   "body": "state=working:progress=1e2",
+   "expect": {
+    "report": {
+     "state": "working"
+    }
+   }
+  },
+  {
+   "name": "progress '99999999999999999999' absent",
+   "covers": [
+    "KEY-PROGRESS-RANGE"
+   ],
+   "body": "state=working:progress=99999999999999999999",
+   "expect": {
+    "report": {
+     "state": "working"
+    }
+   }
+  },
+  {
+   "name": "progress leading zeros",
+   "covers": [
+    "KEY-PROGRESS-RANGE"
+   ],
+   "body": "state=working:progress=007",
+   "expect": {
+    "report": {
+     "state": "working",
+     "progress": 7
+    }
+   },
+   "interpretation": "INT-7"
+  },
+  {
+   "name": "app with every allowed char",
+   "covers": [
+    "KEY-APP-INVALID"
+   ],
+   "body": "state=idle:app=Az09_.+-",
+   "expect": {
+    "report": {
+     "state": "idle",
+     "app": "Az09_.+-"
+    }
+   }
+  },
+  {
+   "name": "app 'a/b' treated as absent",
+   "covers": [
+    "KEY-APP-INVALID"
+   ],
+   "body": "state=idle:app=a/b",
+   "expect": {
+    "report": {
+     "state": "idle"
+    }
+   }
+  },
+  {
+   "name": "app 'a,b' treated as absent",
+   "covers": [
+    "KEY-APP-INVALID"
+   ],
+   "body": "state=idle:app=a,b",
+   "expect": {
+    "report": {
+     "state": "idle"
+    }
+   }
+  },
+  {
+   "name": "app 'a=b' treated as absent",
+   "covers": [
+    "KEY-APP-INVALID"
+   ],
+   "body": "state=idle:app=a=b",
+   "expect": {
+    "report": {
+     "state": "idle"
+    }
+   }
+  },
+  {
+   "name": "app '' treated as absent",
+   "covers": [
+    "KEY-APP-INVALID"
+   ],
+   "body": "state=idle:app=",
+   "expect": {
+    "report": {
+     "state": "idle"
+    }
+   }
+  },
+  {
+   "name": "app 32 bytes",
+   "covers": [
+    "LIM-APP"
+   ],
+   "body": "state=idle:app=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "expect": {
+    "report": {
+     "state": "idle",
+     "app": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+   }
+  },
+  {
+   "name": "app 33 bytes discards",
+   "covers": [
+    "LIM-APP"
+   ],
+   "body": "state=idle:app=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "expect": {
+    "discard": true
+   },
+   "interpretation": "INT-5"
+  },
+  {
+   "name": "unknown key 16 bytes",
+   "covers": [
+    "LIM-KEY",
+    "SYN-UNKNOWN"
+   ],
+   "body": "state=idle:kkkkkkkkkkkkkkkk=1",
+   "expect": {
+    "report": {
+     "state": "idle"
+    }
+   }
+  },
+  {
+   "name": "unknown key 17 bytes discards",
+   "covers": [
+    "LIM-KEY"
+   ],
+   "body": "state=idle:kkkkkkkkkkkkkkkkk=1",
+   "expect": {
+    "discard": true
+   }
+  },
+  {
+   "name": "uppercase key 17 bytes discards",
+   "covers": [
+    "LIM-KEY"
+   ],
+   "body": "state=idle:KKKKKKKKKKKKKKKKK=1",
+   "expect": {
+    "discard": true
+   },
+   "interpretation": "INT-4"
+  },
+  {
+   "name": "msg 2048 bytes decoded",
+   "covers": [
+    "LIM-MSG"
+   ],
+   "body": "state=idle:msg=bW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW0=",
+   "expect": {
+    "report": {
+     "state": "idle",
+     "msg": "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm"
+    }
+   }
+  },
+  {
+   "name": "msg 2048 bytes decoded unpadded",
+   "covers": [
+    "LIM-MSG",
+    "SYN-B64-PAD"
+   ],
+   "body": "state=idle:msg=bW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW0",
+   "expect": {
+    "report": {
+     "state": "idle",
+     "msg": "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm"
+    }
+   }
+  },
+  {
+   "name": "msg 2049 bytes decoded (2732 encoded)",
+   "covers": [
+    "LIM-MSG"
+   ],
+   "body": "state=idle:msg=bW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1t",
+   "expect": {
+    "discard": true
+   }
+  },
+  {
+   "name": "msg 2733 bytes encoded",
+   "covers": [
+    "LIM-MSG"
+   ],
+   "body": "state=idle:msg=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+   "expect": {
+    "discard": true
+   }
+  },
+  {
+   "name": "msg over limit discards before base64 check",
+   "covers": [
+    "LIM-MSG"
+   ],
+   "body": "state=idle:msg=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+   "expect": {
+    "discard": true
+   }
+  },
+  {
+   "name": "title 192 bytes decoded",
+   "covers": [
+    "LIM-TITLE"
+   ],
+   "body": "state=idle:title=dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0",
+   "expect": {
+    "report": {
+     "state": "idle",
+     "title": "tttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt"
+    }
+   }
+  },
+  {
+   "name": "title 193 bytes decoded",
+   "covers": [
+    "LIM-TITLE"
+   ],
+   "body": "state=idle:title=dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dA==",
+   "expect": {
+    "discard": true
+   }
+  },
+  {
+   "name": "title multibyte at limit",
+   "covers": [
+    "LIM-TITLE"
+   ],
+   "body": "state=idle:title=w6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOp",
+   "expect": {
+    "report": {
+     "state": "idle",
+     "title": "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé"
+    }
+   }
+  },
+  {
+   "name": "title multibyte over limit",
+   "covers": [
+    "LIM-TITLE"
+   ],
+   "body": "state=idle:title=w6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6nDqcOpw6k=",
+   "expect": {
+    "discard": true
+   }
+  },
+  {
+   "name": "bare query",
+   "covers": [
+    "FD-DEFAULT-STATES",
+    "FD-DEFAULT-KINDS"
+   ],
+   "body": "?",
+   "expect": {
+    "feature": {
+     "states": [
+      "idle",
+      "working",
+      "done",
+      "blocked",
+      "error"
+     ],
+     "kinds": [
+      "permission",
+      "question",
+      "auth"
+     ]
+    }
+   },
+   "interpretation": "INT-11"
+  },
+  {
+   "name": "query with whitespace",
+   "covers": [
+    "SYN-WS"
+   ],
+   "body": " ? ",
+   "expect": {
+    "feature": {
+     "states": [
+      "idle",
+      "working",
+      "done",
+      "blocked",
+      "error"
+     ],
+     "kinds": [
+      "permission",
+      "question",
+      "auth"
+     ]
+    }
+   },
+   "interpretation": "INT-11"
+  },
+  {
+   "name": "reply listing everything",
+   "covers": [
+    "FD-DEFAULT-STATES"
+   ],
+   "body": "?:states=idle,working,done,blocked,error:kinds=permission,question,auth",
+   "expect": {
+    "feature": {
+     "states": [
+      "idle",
+      "working",
+      "done",
+      "blocked",
+      "error"
+     ],
+     "kinds": [
+      "permission",
+      "question",
+      "auth"
+     ]
+    }
+   }
+  },
+  {
+   "name": "reply with states only",
+   "covers": [
+    "FD-DEFAULT-KINDS"
+   ],
+   "body": "?:states=idle,done",
+   "expect": {
+    "feature": {
+     "states": [
+      "idle",
+      "done"
+     ],
+     "kinds": [
+      "permission",
+      "question",
+      "auth"
+     ]
+    }
+   }
+  },
+  {
+   "name": "reply with kinds only",
+   "covers": [
+    "FD-DEFAULT-STATES"
+   ],
+   "body": "?:kinds=auth",
+   "expect": {
+    "feature": {
+     "states": [
+      "idle",
+      "working",
+      "done",
+      "blocked",
+      "error"
+     ],
+     "kinds": [
+      "auth"
+     ]
+    }
+   }
+  },
+  {
+   "name": "reply with empty kinds",
+   "covers": [
+    "FD-IGNORE"
+   ],
+   "body": "?:kinds=",
+   "expect": {
+    "feature": {
+     "states": [
+      "idle",
+      "working",
+      "done",
+      "blocked",
+      "error"
+     ],
+     "kinds": []
+    }
+   }
+  },
+  {
+   "name": "reply with unknown pairs and values",
+   "covers": [
+    "FD-IGNORE"
+   ],
+   "body": "?:version=7:states=idle,teleport:kinds=auth,payment",
+   "expect": {
+    "feature": {
+     "states": [
+      "idle"
+     ],
+     "kinds": [
+      "auth"
+     ]
+    }
+   }
+  },
+  {
+   "name": "reply spec example",
+   "covers": [
+    "FD-REPLY",
+    "SYN-WS"
+   ],
+   "body": "? : states=idle,working,done,blocked,error : kinds=permission,question,auth",
+   "expect": {
+    "feature": {
+     "states": [
+      "idle",
+      "working",
+      "done",
+      "blocked",
+      "error"
+     ],
+     "kinds": [
+      "permission",
+      "question",
+      "auth"
+     ]
+    }
+   }
+  },
+  {
+   "name": "spec example state=working:app=brew:msg=SW5zdGFsbGluZ",
+   "covers": [
+    "SYN-PAIRS",
+    "SYN-B64"
+   ],
+   "body": "state=working:app=brew:msg=SW5zdGFsbGluZyB1cGRhdGVz",
+   "expect": {
+    "report": {
+     "state": "working",
+     "app": "brew",
+     "msg": "Installing updates"
+    }
+   }
+  },
+  {
+   "name": "spec example state=blocked:kind=auth:app=brew:msg=UGF",
+   "covers": [
+    "SYN-PAIRS",
+    "SYN-B64"
+   ],
+   "body": "state=blocked:kind=auth:app=brew:msg=UGFzc3dvcmQgcmVxdWlyZWQgdG8gaW5zdGFsbCB1cGRhdGVz",
+   "expect": {
+    "report": {
+     "state": "blocked",
+     "kind": "auth",
+     "app": "brew",
+     "msg": "Password required to install updates"
+    }
+   }
+  },
+  {
+   "name": "spec example state=done:app=brew:msg=VXBncmFkZWQgMTIg",
+   "covers": [
+    "SYN-PAIRS",
+    "SYN-B64"
+   ],
+   "body": "state=done:app=brew:msg=VXBncmFkZWQgMTIgcGFja2FnZXM=",
+   "expect": {
+    "report": {
+     "state": "done",
+     "app": "brew",
+     "msg": "Upgraded 12 packages"
+    }
+   }
+  },
+  {
+   "name": "spec example state=working:id=us-east:title=VVMgRWFzd",
+   "covers": [
+    "SYN-PAIRS",
+    "SYN-B64"
+   ],
+   "body": "state=working:id=us-east:title=VVMgRWFzdA==:progress=40:msg=UHVzaGluZyBpbWFnZQ==",
+   "expect": {
+    "report": {
+     "state": "working",
+     "id": "us-east",
+     "title": "US East",
+     "progress": 40,
+     "msg": "Pushing image"
+    }
+   }
+  },
+  {
+   "name": "spec example state=blocked:kind=permission:id=eu-west",
+   "covers": [
+    "SYN-PAIRS",
+    "SYN-B64"
+   ],
+   "body": "state=blocked:kind=permission:id=eu-west:title=RVUgV2VzdA==:msg=QXBwcm92ZSBkZXBsb3kgdG8gZXUtd2VzdCAocHJvZHVjdGlvbik/",
+   "expect": {
+    "report": {
+     "state": "blocked",
+     "kind": "permission",
+     "id": "eu-west",
+     "title": "EU West",
+     "msg": "Approve deploy to eu-west (production)?"
+    }
+   }
+  }
+ ]
+}

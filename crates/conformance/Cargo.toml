@@ -1,0 +1,15 @@
+[package]
+name = "termstate-conformance"
+description = "Runs the language-neutral vectors in spec-tests/ against the Rust implementation"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+termstate-core = { workspace = true, features = ["alloc"] }
+termstate-store = { workspace = true }
+serde_json = "1"
+
+[lints]
+workspace = true

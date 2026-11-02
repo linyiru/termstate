@@ -3,6 +3,7 @@ resolver = "3"
 members = [
     "crates/termstate-core",
     "crates/termstate-store",
+    "crates/conformance",
 ]
 
 [workspace.package]

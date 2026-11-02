@@ -1,0 +1,1932 @@
+{
+ "description": "Steps applied to one terminal's record set, then the expected records. See ../README.md.",
+ "cases": [
+  {
+   "name": "report replaces the record completely",
+   "covers": [
+    "REC-REPLACE"
+   ],
+   "steps": [
+    {
+     "report": "state=working:app=brew:progress=10:msg=SW5zdGFsbGluZyB1cGRhdGVz"
+    },
+    {
+     "report": "state=done"
+    }
+   ],
+   "expect": {
+    "records": [
+     {
+      "id": null,
+      "state": "done"
+     }
+    ]
+   }
+  },
+  {
+   "name": "root and child coexist",
+   "covers": [
+    "REC-COEXIST"
+   ],
+   "steps": [
+    {
+     "report": "state=idle:app=sh"
+    },
+    {
+     "report": "state=blocked:id=worker:kind=question"
+    }
+   ],
+   "expect": {
+    "records": [
+     {
+      "id": null,
+      "state": "idle",
+      "app": "sh",
+      "effective_app": "sh"
+     },
+     {
+      "id": "worker",
+      "state": "blocked",
+      "kind": "question",
+      "effective_app": "sh"
+     }
+    ]
+   }
+  },
+  {
+   "name": "parent need not exist",
+   "covers": [
+    "REC-PARENT"
+   ],
+   "steps": [
+    {
+     "report": "state=working:id=a/b/c"
+    }
+   ],
+   "expect": {
+    "records": [
+     {
+      "id": "a/b/c",
+      "state": "working"
+     }
+    ]
+   }
+  },
+  {
+   "name": "app inherited from nearest ancestor",
+   "covers": [
+    "KEY-APP-INHERIT",
+    "REC-HIERARCHY"
+   ],
+   "steps": [
+    {
+     "report": "state=working:app=deploy"
+    },
+    {
+     "report": "state=working:id=us"
+    },
+    {
+     "report": "state=working:id=us/a:app=pusher"
+    },
+    {
+     "report": "state=working:id=us/a/b"
+    },
+    {
+     "report": "state=working:id=eu/x"
+    }
+   ],
+   "expect": {
+    "records": [
+     {
+      "id": null,
+      "state": "working",
+      "app": "deploy",
+      "effective_app": "deploy"
+     },
+     {
+      "id": "eu/x",
+      "state": "working",
+      "effective_app": "deploy"
+     },
+     {
+      "id": "us",
+      "state": "working",
+      "effective_app": "deploy"
+     },
+     {
+      "id": "us/a",
+      "state": "working",
+      "app": "pusher",
+      "effective_app": "pusher"
+     },
+     {
+      "id": "us/a/b",
+      "state": "working",
+      "effective_app": "pusher"
+     }
+    ]
+   }
+  },
+  {
+   "name": "no app anywhere",
+   "covers": [
+    "KEY-APP-INHERIT"
+   ],
+   "steps": [
+    {
+     "report": "state=idle:id=a/b"
+    }
+   ],
+   "expect": {
+    "records": [
+     {
+      "id": "a/b",
+      "state": "idle"
+     }
+    ]
+   }
+  },
+  {
+   "name": "clear removes the subtree only",
+   "covers": [
+    "ST-CLEAR",
+    "REC-HIERARCHY"
+   ],
+   "steps": [
+    {
+     "report": "state=idle"
+    },
+    {
+     "report": "state=idle:id=a"
+    },
+    {
+     "report": "state=idle:id=a/b"
+    },
+    {
+     "report": "state=idle:id=a/b/c"
+    },
+    {
+     "report": "state=idle:id=ab"
+    },
+    {
+     "report": "state=idle:id=b"
+    },
+    {
+     "report": "state=clear:id=a"
+    }
+   ],
+   "expect": {
+    "records": [
+     {
+      "id": null,
+      "state": "idle"
+     },
+     {
+      "id": "ab",
+      "state": "idle"
+     },
+     {
+      "id": "b",
+      "state": "idle"
+     }
+    ]
+   }
+  },
+  {
+   "name": "clear a child keeps its parent",
+   "covers": [
+    "ST-CLEAR"
+   ],
+   "steps": [
+    {
+     "report": "state=idle:id=a"
+    },
+    {
+     "report": "state=idle:id=a/b"
+    },
+    {
+     "report": "state=clear:id=a/b"
+    }
+   ],
+   "expect": {
+    "records": [
+     {
+      "id": "a",
+      "state": "idle"
+     }
+    ]
+   }
+  },
+  {
+   "name": "clear without id removes everything",
+   "covers": [
+    "ST-CLEAR"
+   ],
+   "steps": [
+    {
+     "report": "state=idle"
+    },
+    {
+     "report": "state=done:id=a"
+    },
+    {
+     "report": "state=clear"
+    }
+   ],
+   "expect": {
+    "records": []
+   }
+  },
+  {
+   "name": "clear of missing record is harmless",
+   "covers": [
+    "ST-CLEAR"
+   ],
+   "steps": [
+    {
+     "report": "state=idle"
+    },
+    {
+     "report": "state=clear:id=nope"
+    }
+   ],
+   "expect": {
+    "records": [
+     {
+      "id": null,
+      "state": "idle"
+     }
+    ]
+   }
+  },
+  {
+   "name": "process_exit drops working and blocked",
+   "covers": [
+    "ST-LIFETIME-DROP",
+    "ST-LIFETIME-KEEP"
+   ],
+   "steps": [
+    {
+     "report": "state=idle:id=i"
+    },
+    {
+     "report": "state=working:id=w"
+    },
+    {
+     "report": "state=blocked:id=b"
+    },
+    {
+     "report": "state=done:id=d"
+    },
+    {
+     "report": "state=error:id=e"
+    },
+    {
+     "event": "process_exit"
+    }
+   ],
+   "expect": {
+    "records": [
+     {
+      "id": "d",
+      "state": "done"
+     },
+     {
+      "id": "e",
+      "state": "error"
+     },
+     {
+      "id": "i",
+      "state": "idle"
+     }
+    ]
+   }
+  },
+  {
+   "name": "prompt drops working and blocked",
+   "covers": [
+    "ST-LIFETIME-DROP",
+    "ST-LIFETIME-KEEP"
+   ],
+   "steps": [
+    {
+     "report": "state=idle:id=i"
+    },
+    {
+     "report": "state=working:id=w"
+    },
+    {
+     "report": "state=blocked:id=b"
+    },
+    {
+     "report": "state=done:id=d"
+    },
+    {
+     "report": "state=error:id=e"
+    },
+    {
+     "event": "prompt"
+    }
+   ],
+   "expect": {
+    "records": [
+     {
+      "id": "d",
+      "state": "done"
+     },
+     {
+      "id": "e",
+      "state": "error"
+     },
+     {
+      "id": "i",
+      "state": "idle"
+     }
+    ]
+   }
+  },
+  {
+   "name": "drop idle policy",
+   "covers": [
+    "ST-LIFETIME-DROP"
+   ],
+   "steps": [
+    {
+     "config": {
+      "drop_idle": true
+     }
+    },
+    {
+     "report": "state=idle"
+    },
+    {
+     "report": "state=done:id=d"
+    },
+    {
+     "event": "prompt"
+    }
+   ],
+   "expect": {
+    "records": [
+     {
+      "id": "d",
+      "state": "done"
+     }
+    ]
+   }
+  },
+  {
+   "name": "records stay without re-sending",
+   "covers": [
+    "ST-NO-HEARTBEAT"
+   ],
+   "steps": [
+    {
+     "report": "state=working"
+    },
+    {
+     "report": "state=idle:id=n0"
+    },
+    {
+     "report": "state=idle:id=n1"
+    },
+    {
+     "report": "state=idle:id=n2"
+    },
+    {
+     "report": "state=idle:id=n3"
+    },
+    {
+     "report": "state=idle:id=n4"
+    },
+    {
+     "report": "state=idle:id=n5"
+    },
+    {
+     "report": "state=idle:id=n6"
+    },
+    {
+     "report": "state=idle:id=n7"
+    },
+    {
+     "report": "state=idle:id=n8"
+    },
+    {
+     "report": "state=idle:id=n9"
+    },
+    {
+     "report": "state=idle:id=n10"
+    },
+    {
+     "report": "state=idle:id=n11"
+    },
+    {
+     "report": "state=idle:id=n12"
+    },
+    {
+     "report": "state=idle:id=n13"
+    },
+    {
+     "report": "state=idle:id=n14"
+    },
+    {
+     "report": "state=idle:id=n15"
+    },
+    {
+     "report": "state=idle:id=n16"
+    },
+    {
+     "report": "state=idle:id=n17"
+    },
+    {
+     "report": "state=idle:id=n18"
+    },
+    {
+     "report": "state=idle:id=n19"
+    }
+   ],
+   "expect": {
+    "count": 21,
+    "present": [
+     null
+    ]
+   }
+  },
+  {
+   "name": "RIS removes everything",
+   "covers": [
+    "REC-RIS"
+   ],
+   "steps": [
+    {
+     "report": "state=done"
+    },
+    {
+     "report": "state=error:id=x"
+    },
+    {
+     "event": "reset"
+    }
+   ],
+   "expect": {
+    "records": []
+   }
+  },
+  {
+   "name": "discarded report leaves the record untouched",
+   "covers": [
+    "LIM-ATOMIC",
+    "SYN-DISCARD"
+   ],
+   "steps": [
+    {
+     "report": "state=working:app=x:progress=5"
+    },
+    {
+     "report": "state=done:msg=S"
+    },
+    {
+     "report": "state=done:id=a//b"
+    },
+    {
+     "report": "state=paused"
+    }
+   ],
+   "expect": {
+    "records": [
+     {
+      "id": null,
+      "state": "working",
+      "app": "x",
+      "progress": 5,
+      "effective_app": "x"
+     }
+    ]
+   }
+  },
+  {
+   "name": "least recently updated record is evicted at the cap",
+   "covers": [
+    "LIM-RECORDS"
+   ],
+   "steps": [
+    {
+     "report": "state=idle:id=r00"
+    },
+    {
+     "report": "state=idle:id=r01"
+    },
+    {
+     "report": "state=idle:id=r02"
+    },
+    {
+     "report": "state=idle:id=r03"
+    },
+    {
+     "report": "state=idle:id=r04"
+    },
+    {
+     "report": "state=idle:id=r05"
+    },
+    {
+     "report": "state=idle:id=r06"
+    },
+    {
+     "report": "state=idle:id=r07"
+    },
+    {
+     "report": "state=idle:id=r08"
+    },
+    {
+     "report": "state=idle:id=r09"
+    },
+    {
+     "report": "state=idle:id=r10"
+    },
+    {
+     "report": "state=idle:id=r11"
+    },
+    {
+     "report": "state=idle:id=r12"
+    },
+    {
+     "report": "state=idle:id=r13"
+    },
+    {
+     "report": "state=idle:id=r14"
+    },
+    {
+     "report": "state=idle:id=r15"
+    },
+    {
+     "report": "state=idle:id=r16"
+    },
+    {
+     "report": "state=idle:id=r17"
+    },
+    {
+     "report": "state=idle:id=r18"
+    },
+    {
+     "report": "state=idle:id=r19"
+    },
+    {
+     "report": "state=idle:id=r20"
+    },
+    {
+     "report": "state=idle:id=r21"
+    },
+    {
+     "report": "state=idle:id=r22"
+    },
+    {
+     "report": "state=idle:id=r23"
+    },
+    {
+     "report": "state=idle:id=r24"
+    },
+    {
+     "report": "state=idle:id=r25"
+    },
+    {
+     "report": "state=idle:id=r26"
+    },
+    {
+     "report": "state=idle:id=r27"
+    },
+    {
+     "report": "state=idle:id=r28"
+    },
+    {
+     "report": "state=idle:id=r29"
+    },
+    {
+     "report": "state=idle:id=r30"
+    },
+    {
+     "report": "state=idle:id=r31"
+    },
+    {
+     "report": "state=idle:id=r32"
+    },
+    {
+     "report": "state=idle:id=r33"
+    },
+    {
+     "report": "state=idle:id=r34"
+    },
+    {
+     "report": "state=idle:id=r35"
+    },
+    {
+     "report": "state=idle:id=r36"
+    },
+    {
+     "report": "state=idle:id=r37"
+    },
+    {
+     "report": "state=idle:id=r38"
+    },
+    {
+     "report": "state=idle:id=r39"
+    },
+    {
+     "report": "state=idle:id=r40"
+    },
+    {
+     "report": "state=idle:id=r41"
+    },
+    {
+     "report": "state=idle:id=r42"
+    },
+    {
+     "report": "state=idle:id=r43"
+    },
+    {
+     "report": "state=idle:id=r44"
+    },
+    {
+     "report": "state=idle:id=r45"
+    },
+    {
+     "report": "state=idle:id=r46"
+    },
+    {
+     "report": "state=idle:id=r47"
+    },
+    {
+     "report": "state=idle:id=r48"
+    },
+    {
+     "report": "state=idle:id=r49"
+    },
+    {
+     "report": "state=idle:id=r50"
+    },
+    {
+     "report": "state=idle:id=r51"
+    },
+    {
+     "report": "state=idle:id=r52"
+    },
+    {
+     "report": "state=idle:id=r53"
+    },
+    {
+     "report": "state=idle:id=r54"
+    },
+    {
+     "report": "state=idle:id=r55"
+    },
+    {
+     "report": "state=idle:id=r56"
+    },
+    {
+     "report": "state=idle:id=r57"
+    },
+    {
+     "report": "state=idle:id=r58"
+    },
+    {
+     "report": "state=idle:id=r59"
+    },
+    {
+     "report": "state=idle:id=r60"
+    },
+    {
+     "report": "state=idle:id=r61"
+    },
+    {
+     "report": "state=idle:id=r62"
+    },
+    {
+     "report": "state=idle:id=r63"
+    },
+    {
+     "report": "state=done:id=r00"
+    },
+    {
+     "report": "state=idle:id=new"
+    }
+   ],
+   "expect": {
+    "count": 64,
+    "present": [
+     "r00",
+     "new",
+     "r02"
+    ],
+    "absent": [
+     "r01"
+    ]
+   },
+   "capacity": 64
+  },
+  {
+   "name": "replacing at the cap does not evict",
+   "covers": [
+    "LIM-RECORDS"
+   ],
+   "steps": [
+    {
+     "report": "state=idle:id=r00"
+    },
+    {
+     "report": "state=idle:id=r01"
+    },
+    {
+     "report": "state=idle:id=r02"
+    },
+    {
+     "report": "state=idle:id=r03"
+    },
+    {
+     "report": "state=idle:id=r04"
+    },
+    {
+     "report": "state=idle:id=r05"
+    },
+    {
+     "report": "state=idle:id=r06"
+    },
+    {
+     "report": "state=idle:id=r07"
+    },
+    {
+     "report": "state=idle:id=r08"
+    },
+    {
+     "report": "state=idle:id=r09"
+    },
+    {
+     "report": "state=idle:id=r10"
+    },
+    {
+     "report": "state=idle:id=r11"
+    },
+    {
+     "report": "state=idle:id=r12"
+    },
+    {
+     "report": "state=idle:id=r13"
+    },
+    {
+     "report": "state=idle:id=r14"
+    },
+    {
+     "report": "state=idle:id=r15"
+    },
+    {
+     "report": "state=idle:id=r16"
+    },
+    {
+     "report": "state=idle:id=r17"
+    },
+    {
+     "report": "state=idle:id=r18"
+    },
+    {
+     "report": "state=idle:id=r19"
+    },
+    {
+     "report": "state=idle:id=r20"
+    },
+    {
+     "report": "state=idle:id=r21"
+    },
+    {
+     "report": "state=idle:id=r22"
+    },
+    {
+     "report": "state=idle:id=r23"
+    },
+    {
+     "report": "state=idle:id=r24"
+    },
+    {
+     "report": "state=idle:id=r25"
+    },
+    {
+     "report": "state=idle:id=r26"
+    },
+    {
+     "report": "state=idle:id=r27"
+    },
+    {
+     "report": "state=idle:id=r28"
+    },
+    {
+     "report": "state=idle:id=r29"
+    },
+    {
+     "report": "state=idle:id=r30"
+    },
+    {
+     "report": "state=idle:id=r31"
+    },
+    {
+     "report": "state=idle:id=r32"
+    },
+    {
+     "report": "state=idle:id=r33"
+    },
+    {
+     "report": "state=idle:id=r34"
+    },
+    {
+     "report": "state=idle:id=r35"
+    },
+    {
+     "report": "state=idle:id=r36"
+    },
+    {
+     "report": "state=idle:id=r37"
+    },
+    {
+     "report": "state=idle:id=r38"
+    },
+    {
+     "report": "state=idle:id=r39"
+    },
+    {
+     "report": "state=idle:id=r40"
+    },
+    {
+     "report": "state=idle:id=r41"
+    },
+    {
+     "report": "state=idle:id=r42"
+    },
+    {
+     "report": "state=idle:id=r43"
+    },
+    {
+     "report": "state=idle:id=r44"
+    },
+    {
+     "report": "state=idle:id=r45"
+    },
+    {
+     "report": "state=idle:id=r46"
+    },
+    {
+     "report": "state=idle:id=r47"
+    },
+    {
+     "report": "state=idle:id=r48"
+    },
+    {
+     "report": "state=idle:id=r49"
+    },
+    {
+     "report": "state=idle:id=r50"
+    },
+    {
+     "report": "state=idle:id=r51"
+    },
+    {
+     "report": "state=idle:id=r52"
+    },
+    {
+     "report": "state=idle:id=r53"
+    },
+    {
+     "report": "state=idle:id=r54"
+    },
+    {
+     "report": "state=idle:id=r55"
+    },
+    {
+     "report": "state=idle:id=r56"
+    },
+    {
+     "report": "state=idle:id=r57"
+    },
+    {
+     "report": "state=idle:id=r58"
+    },
+    {
+     "report": "state=idle:id=r59"
+    },
+    {
+     "report": "state=idle:id=r60"
+    },
+    {
+     "report": "state=idle:id=r61"
+    },
+    {
+     "report": "state=idle:id=r62"
+    },
+    {
+     "report": "state=idle:id=r63"
+    },
+    {
+     "report": "state=done:id=r00"
+    }
+   ],
+   "expect": {
+    "count": 64,
+    "present": [
+     "r00",
+     "r01"
+    ]
+   },
+   "capacity": 64,
+   "interpretation": "INT-13"
+  },
+  {
+   "name": "full cap of 256",
+   "covers": [
+    "LIM-RECORDS"
+   ],
+   "steps": [
+    {
+     "report": "state=idle:id=r000"
+    },
+    {
+     "report": "state=idle:id=r001"
+    },
+    {
+     "report": "state=idle:id=r002"
+    },
+    {
+     "report": "state=idle:id=r003"
+    },
+    {
+     "report": "state=idle:id=r004"
+    },
+    {
+     "report": "state=idle:id=r005"
+    },
+    {
+     "report": "state=idle:id=r006"
+    },
+    {
+     "report": "state=idle:id=r007"
+    },
+    {
+     "report": "state=idle:id=r008"
+    },
+    {
+     "report": "state=idle:id=r009"
+    },
+    {
+     "report": "state=idle:id=r010"
+    },
+    {
+     "report": "state=idle:id=r011"
+    },
+    {
+     "report": "state=idle:id=r012"
+    },
+    {
+     "report": "state=idle:id=r013"
+    },
+    {
+     "report": "state=idle:id=r014"
+    },
+    {
+     "report": "state=idle:id=r015"
+    },
+    {
+     "report": "state=idle:id=r016"
+    },
+    {
+     "report": "state=idle:id=r017"
+    },
+    {
+     "report": "state=idle:id=r018"
+    },
+    {
+     "report": "state=idle:id=r019"
+    },
+    {
+     "report": "state=idle:id=r020"
+    },
+    {
+     "report": "state=idle:id=r021"
+    },
+    {
+     "report": "state=idle:id=r022"
+    },
+    {
+     "report": "state=idle:id=r023"
+    },
+    {
+     "report": "state=idle:id=r024"
+    },
+    {
+     "report": "state=idle:id=r025"
+    },
+    {
+     "report": "state=idle:id=r026"
+    },
+    {
+     "report": "state=idle:id=r027"
+    },
+    {
+     "report": "state=idle:id=r028"
+    },
+    {
+     "report": "state=idle:id=r029"
+    },
+    {
+     "report": "state=idle:id=r030"
+    },
+    {
+     "report": "state=idle:id=r031"
+    },
+    {
+     "report": "state=idle:id=r032"
+    },
+    {
+     "report": "state=idle:id=r033"
+    },
+    {
+     "report": "state=idle:id=r034"
+    },
+    {
+     "report": "state=idle:id=r035"
+    },
+    {
+     "report": "state=idle:id=r036"
+    },
+    {
+     "report": "state=idle:id=r037"
+    },
+    {
+     "report": "state=idle:id=r038"
+    },
+    {
+     "report": "state=idle:id=r039"
+    },
+    {
+     "report": "state=idle:id=r040"
+    },
+    {
+     "report": "state=idle:id=r041"
+    },
+    {
+     "report": "state=idle:id=r042"
+    },
+    {
+     "report": "state=idle:id=r043"
+    },
+    {
+     "report": "state=idle:id=r044"
+    },
+    {
+     "report": "state=idle:id=r045"
+    },
+    {
+     "report": "state=idle:id=r046"
+    },
+    {
+     "report": "state=idle:id=r047"
+    },
+    {
+     "report": "state=idle:id=r048"
+    },
+    {
+     "report": "state=idle:id=r049"
+    },
+    {
+     "report": "state=idle:id=r050"
+    },
+    {
+     "report": "state=idle:id=r051"
+    },
+    {
+     "report": "state=idle:id=r052"
+    },
+    {
+     "report": "state=idle:id=r053"
+    },
+    {
+     "report": "state=idle:id=r054"
+    },
+    {
+     "report": "state=idle:id=r055"
+    },
+    {
+     "report": "state=idle:id=r056"
+    },
+    {
+     "report": "state=idle:id=r057"
+    },
+    {
+     "report": "state=idle:id=r058"
+    },
+    {
+     "report": "state=idle:id=r059"
+    },
+    {
+     "report": "state=idle:id=r060"
+    },
+    {
+     "report": "state=idle:id=r061"
+    },
+    {
+     "report": "state=idle:id=r062"
+    },
+    {
+     "report": "state=idle:id=r063"
+    },
+    {
+     "report": "state=idle:id=r064"
+    },
+    {
+     "report": "state=idle:id=r065"
+    },
+    {
+     "report": "state=idle:id=r066"
+    },
+    {
+     "report": "state=idle:id=r067"
+    },
+    {
+     "report": "state=idle:id=r068"
+    },
+    {
+     "report": "state=idle:id=r069"
+    },
+    {
+     "report": "state=idle:id=r070"
+    },
+    {
+     "report": "state=idle:id=r071"
+    },
+    {
+     "report": "state=idle:id=r072"
+    },
+    {
+     "report": "state=idle:id=r073"
+    },
+    {
+     "report": "state=idle:id=r074"
+    },
+    {
+     "report": "state=idle:id=r075"
+    },
+    {
+     "report": "state=idle:id=r076"
+    },
+    {
+     "report": "state=idle:id=r077"
+    },
+    {
+     "report": "state=idle:id=r078"
+    },
+    {
+     "report": "state=idle:id=r079"
+    },
+    {
+     "report": "state=idle:id=r080"
+    },
+    {
+     "report": "state=idle:id=r081"
+    },
+    {
+     "report": "state=idle:id=r082"
+    },
+    {
+     "report": "state=idle:id=r083"
+    },
+    {
+     "report": "state=idle:id=r084"
+    },
+    {
+     "report": "state=idle:id=r085"
+    },
+    {
+     "report": "state=idle:id=r086"
+    },
+    {
+     "report": "state=idle:id=r087"
+    },
+    {
+     "report": "state=idle:id=r088"
+    },
+    {
+     "report": "state=idle:id=r089"
+    },
+    {
+     "report": "state=idle:id=r090"
+    },
+    {
+     "report": "state=idle:id=r091"
+    },
+    {
+     "report": "state=idle:id=r092"
+    },
+    {
+     "report": "state=idle:id=r093"
+    },
+    {
+     "report": "state=idle:id=r094"
+    },
+    {
+     "report": "state=idle:id=r095"
+    },
+    {
+     "report": "state=idle:id=r096"
+    },
+    {
+     "report": "state=idle:id=r097"
+    },
+    {
+     "report": "state=idle:id=r098"
+    },
+    {
+     "report": "state=idle:id=r099"
+    },
+    {
+     "report": "state=idle:id=r100"
+    },
+    {
+     "report": "state=idle:id=r101"
+    },
+    {
+     "report": "state=idle:id=r102"
+    },
+    {
+     "report": "state=idle:id=r103"
+    },
+    {
+     "report": "state=idle:id=r104"
+    },
+    {
+     "report": "state=idle:id=r105"
+    },
+    {
+     "report": "state=idle:id=r106"
+    },
+    {
+     "report": "state=idle:id=r107"
+    },
+    {
+     "report": "state=idle:id=r108"
+    },
+    {
+     "report": "state=idle:id=r109"
+    },
+    {
+     "report": "state=idle:id=r110"
+    },
+    {
+     "report": "state=idle:id=r111"
+    },
+    {
+     "report": "state=idle:id=r112"
+    },
+    {
+     "report": "state=idle:id=r113"
+    },
+    {
+     "report": "state=idle:id=r114"
+    },
+    {
+     "report": "state=idle:id=r115"
+    },
+    {
+     "report": "state=idle:id=r116"
+    },
+    {
+     "report": "state=idle:id=r117"
+    },
+    {
+     "report": "state=idle:id=r118"
+    },
+    {
+     "report": "state=idle:id=r119"
+    },
+    {
+     "report": "state=idle:id=r120"
+    },
+    {
+     "report": "state=idle:id=r121"
+    },
+    {
+     "report": "state=idle:id=r122"
+    },
+    {
+     "report": "state=idle:id=r123"
+    },
+    {
+     "report": "state=idle:id=r124"
+    },
+    {
+     "report": "state=idle:id=r125"
+    },
+    {
+     "report": "state=idle:id=r126"
+    },
+    {
+     "report": "state=idle:id=r127"
+    },
+    {
+     "report": "state=idle:id=r128"
+    },
+    {
+     "report": "state=idle:id=r129"
+    },
+    {
+     "report": "state=idle:id=r130"
+    },
+    {
+     "report": "state=idle:id=r131"
+    },
+    {
+     "report": "state=idle:id=r132"
+    },
+    {
+     "report": "state=idle:id=r133"
+    },
+    {
+     "report": "state=idle:id=r134"
+    },
+    {
+     "report": "state=idle:id=r135"
+    },
+    {
+     "report": "state=idle:id=r136"
+    },
+    {
+     "report": "state=idle:id=r137"
+    },
+    {
+     "report": "state=idle:id=r138"
+    },
+    {
+     "report": "state=idle:id=r139"
+    },
+    {
+     "report": "state=idle:id=r140"
+    },
+    {
+     "report": "state=idle:id=r141"
+    },
+    {
+     "report": "state=idle:id=r142"
+    },
+    {
+     "report": "state=idle:id=r143"
+    },
+    {
+     "report": "state=idle:id=r144"
+    },
+    {
+     "report": "state=idle:id=r145"
+    },
+    {
+     "report": "state=idle:id=r146"
+    },
+    {
+     "report": "state=idle:id=r147"
+    },
+    {
+     "report": "state=idle:id=r148"
+    },
+    {
+     "report": "state=idle:id=r149"
+    },
+    {
+     "report": "state=idle:id=r150"
+    },
+    {
+     "report": "state=idle:id=r151"
+    },
+    {
+     "report": "state=idle:id=r152"
+    },
+    {
+     "report": "state=idle:id=r153"
+    },
+    {
+     "report": "state=idle:id=r154"
+    },
+    {
+     "report": "state=idle:id=r155"
+    },
+    {
+     "report": "state=idle:id=r156"
+    },
+    {
+     "report": "state=idle:id=r157"
+    },
+    {
+     "report": "state=idle:id=r158"
+    },
+    {
+     "report": "state=idle:id=r159"
+    },
+    {
+     "report": "state=idle:id=r160"
+    },
+    {
+     "report": "state=idle:id=r161"
+    },
+    {
+     "report": "state=idle:id=r162"
+    },
+    {
+     "report": "state=idle:id=r163"
+    },
+    {
+     "report": "state=idle:id=r164"
+    },
+    {
+     "report": "state=idle:id=r165"
+    },
+    {
+     "report": "state=idle:id=r166"
+    },
+    {
+     "report": "state=idle:id=r167"
+    },
+    {
+     "report": "state=idle:id=r168"
+    },
+    {
+     "report": "state=idle:id=r169"
+    },
+    {
+     "report": "state=idle:id=r170"
+    },
+    {
+     "report": "state=idle:id=r171"
+    },
+    {
+     "report": "state=idle:id=r172"
+    },
+    {
+     "report": "state=idle:id=r173"
+    },
+    {
+     "report": "state=idle:id=r174"
+    },
+    {
+     "report": "state=idle:id=r175"
+    },
+    {
+     "report": "state=idle:id=r176"
+    },
+    {
+     "report": "state=idle:id=r177"
+    },
+    {
+     "report": "state=idle:id=r178"
+    },
+    {
+     "report": "state=idle:id=r179"
+    },
+    {
+     "report": "state=idle:id=r180"
+    },
+    {
+     "report": "state=idle:id=r181"
+    },
+    {
+     "report": "state=idle:id=r182"
+    },
+    {
+     "report": "state=idle:id=r183"
+    },
+    {
+     "report": "state=idle:id=r184"
+    },
+    {
+     "report": "state=idle:id=r185"
+    },
+    {
+     "report": "state=idle:id=r186"
+    },
+    {
+     "report": "state=idle:id=r187"
+    },
+    {
+     "report": "state=idle:id=r188"
+    },
+    {
+     "report": "state=idle:id=r189"
+    },
+    {
+     "report": "state=idle:id=r190"
+    },
+    {
+     "report": "state=idle:id=r191"
+    },
+    {
+     "report": "state=idle:id=r192"
+    },
+    {
+     "report": "state=idle:id=r193"
+    },
+    {
+     "report": "state=idle:id=r194"
+    },
+    {
+     "report": "state=idle:id=r195"
+    },
+    {
+     "report": "state=idle:id=r196"
+    },
+    {
+     "report": "state=idle:id=r197"
+    },
+    {
+     "report": "state=idle:id=r198"
+    },
+    {
+     "report": "state=idle:id=r199"
+    },
+    {
+     "report": "state=idle:id=r200"
+    },
+    {
+     "report": "state=idle:id=r201"
+    },
+    {
+     "report": "state=idle:id=r202"
+    },
+    {
+     "report": "state=idle:id=r203"
+    },
+    {
+     "report": "state=idle:id=r204"
+    },
+    {
+     "report": "state=idle:id=r205"
+    },
+    {
+     "report": "state=idle:id=r206"
+    },
+    {
+     "report": "state=idle:id=r207"
+    },
+    {
+     "report": "state=idle:id=r208"
+    },
+    {
+     "report": "state=idle:id=r209"
+    },
+    {
+     "report": "state=idle:id=r210"
+    },
+    {
+     "report": "state=idle:id=r211"
+    },
+    {
+     "report": "state=idle:id=r212"
+    },
+    {
+     "report": "state=idle:id=r213"
+    },
+    {
+     "report": "state=idle:id=r214"
+    },
+    {
+     "report": "state=idle:id=r215"
+    },
+    {
+     "report": "state=idle:id=r216"
+    },
+    {
+     "report": "state=idle:id=r217"
+    },
+    {
+     "report": "state=idle:id=r218"
+    },
+    {
+     "report": "state=idle:id=r219"
+    },
+    {
+     "report": "state=idle:id=r220"
+    },
+    {
+     "report": "state=idle:id=r221"
+    },
+    {
+     "report": "state=idle:id=r222"
+    },
+    {
+     "report": "state=idle:id=r223"
+    },
+    {
+     "report": "state=idle:id=r224"
+    },
+    {
+     "report": "state=idle:id=r225"
+    },
+    {
+     "report": "state=idle:id=r226"
+    },
+    {
+     "report": "state=idle:id=r227"
+    },
+    {
+     "report": "state=idle:id=r228"
+    },
+    {
+     "report": "state=idle:id=r229"
+    },
+    {
+     "report": "state=idle:id=r230"
+    },
+    {
+     "report": "state=idle:id=r231"
+    },
+    {
+     "report": "state=idle:id=r232"
+    },
+    {
+     "report": "state=idle:id=r233"
+    },
+    {
+     "report": "state=idle:id=r234"
+    },
+    {
+     "report": "state=idle:id=r235"
+    },
+    {
+     "report": "state=idle:id=r236"
+    },
+    {
+     "report": "state=idle:id=r237"
+    },
+    {
+     "report": "state=idle:id=r238"
+    },
+    {
+     "report": "state=idle:id=r239"
+    },
+    {
+     "report": "state=idle:id=r240"
+    },
+    {
+     "report": "state=idle:id=r241"
+    },
+    {
+     "report": "state=idle:id=r242"
+    },
+    {
+     "report": "state=idle:id=r243"
+    },
+    {
+     "report": "state=idle:id=r244"
+    },
+    {
+     "report": "state=idle:id=r245"
+    },
+    {
+     "report": "state=idle:id=r246"
+    },
+    {
+     "report": "state=idle:id=r247"
+    },
+    {
+     "report": "state=idle:id=r248"
+    },
+    {
+     "report": "state=idle:id=r249"
+    },
+    {
+     "report": "state=idle:id=r250"
+    },
+    {
+     "report": "state=idle:id=r251"
+    },
+    {
+     "report": "state=idle:id=r252"
+    },
+    {
+     "report": "state=idle:id=r253"
+    },
+    {
+     "report": "state=idle:id=r254"
+    },
+    {
+     "report": "state=idle:id=r255"
+    },
+    {
+     "report": "state=idle:id=r256"
+    }
+   ],
+   "expect": {
+    "count": 256,
+    "absent": [
+     "r000"
+    ],
+    "present": [
+     "r001",
+     "r256"
+    ]
+   }
+  },
+  {
+   "name": "capacity below 64 is raised to 64",
+   "covers": [
+    "LIM-RECORDS"
+   ],
+   "steps": [
+    {
+     "report": "state=idle:id=r00"
+    },
+    {
+     "report": "state=idle:id=r01"
+    },
+    {
+     "report": "state=idle:id=r02"
+    },
+    {
+     "report": "state=idle:id=r03"
+    },
+    {
+     "report": "state=idle:id=r04"
+    },
+    {
+     "report": "state=idle:id=r05"
+    },
+    {
+     "report": "state=idle:id=r06"
+    },
+    {
+     "report": "state=idle:id=r07"
+    },
+    {
+     "report": "state=idle:id=r08"
+    },
+    {
+     "report": "state=idle:id=r09"
+    },
+    {
+     "report": "state=idle:id=r10"
+    },
+    {
+     "report": "state=idle:id=r11"
+    },
+    {
+     "report": "state=idle:id=r12"
+    },
+    {
+     "report": "state=idle:id=r13"
+    },
+    {
+     "report": "state=idle:id=r14"
+    },
+    {
+     "report": "state=idle:id=r15"
+    },
+    {
+     "report": "state=idle:id=r16"
+    },
+    {
+     "report": "state=idle:id=r17"
+    },
+    {
+     "report": "state=idle:id=r18"
+    },
+    {
+     "report": "state=idle:id=r19"
+    },
+    {
+     "report": "state=idle:id=r20"
+    },
+    {
+     "report": "state=idle:id=r21"
+    },
+    {
+     "report": "state=idle:id=r22"
+    },
+    {
+     "report": "state=idle:id=r23"
+    },
+    {
+     "report": "state=idle:id=r24"
+    },
+    {
+     "report": "state=idle:id=r25"
+    },
+    {
+     "report": "state=idle:id=r26"
+    },
+    {
+     "report": "state=idle:id=r27"
+    },
+    {
+     "report": "state=idle:id=r28"
+    },
+    {
+     "report": "state=idle:id=r29"
+    },
+    {
+     "report": "state=idle:id=r30"
+    },
+    {
+     "report": "state=idle:id=r31"
+    },
+    {
+     "report": "state=idle:id=r32"
+    },
+    {
+     "report": "state=idle:id=r33"
+    },
+    {
+     "report": "state=idle:id=r34"
+    },
+    {
+     "report": "state=idle:id=r35"
+    },
+    {
+     "report": "state=idle:id=r36"
+    },
+    {
+     "report": "state=idle:id=r37"
+    },
+    {
+     "report": "state=idle:id=r38"
+    },
+    {
+     "report": "state=idle:id=r39"
+    },
+    {
+     "report": "state=idle:id=r40"
+    },
+    {
+     "report": "state=idle:id=r41"
+    },
+    {
+     "report": "state=idle:id=r42"
+    },
+    {
+     "report": "state=idle:id=r43"
+    },
+    {
+     "report": "state=idle:id=r44"
+    },
+    {
+     "report": "state=idle:id=r45"
+    },
+    {
+     "report": "state=idle:id=r46"
+    },
+    {
+     "report": "state=idle:id=r47"
+    },
+    {
+     "report": "state=idle:id=r48"
+    },
+    {
+     "report": "state=idle:id=r49"
+    },
+    {
+     "report": "state=idle:id=r50"
+    },
+    {
+     "report": "state=idle:id=r51"
+    },
+    {
+     "report": "state=idle:id=r52"
+    },
+    {
+     "report": "state=idle:id=r53"
+    },
+    {
+     "report": "state=idle:id=r54"
+    },
+    {
+     "report": "state=idle:id=r55"
+    },
+    {
+     "report": "state=idle:id=r56"
+    },
+    {
+     "report": "state=idle:id=r57"
+    },
+    {
+     "report": "state=idle:id=r58"
+    },
+    {
+     "report": "state=idle:id=r59"
+    },
+    {
+     "report": "state=idle:id=r60"
+    },
+    {
+     "report": "state=idle:id=r61"
+    },
+    {
+     "report": "state=idle:id=r62"
+    },
+    {
+     "report": "state=idle:id=r63"
+    }
+   ],
+   "expect": {
+    "count": 64
+   },
+   "capacity": 10,
+   "interpretation": "INT-14"
+  }
+ ]
+}
