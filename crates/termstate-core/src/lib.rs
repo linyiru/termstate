@@ -37,6 +37,7 @@ mod parse;
 mod text;
 
 pub mod limits;
+pub mod scan;
 
 pub use caps::{Capabilities, write_query};
 pub use encode::{ReportBuilder, Terminator, write_clear};
