@@ -451,7 +451,7 @@ dependencies = [
 
 [[package]]
 name = "termstate"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "termstate-core",
  "termstate-store",
@@ -459,7 +459,7 @@ dependencies = [
 
 [[package]]
 name = "termstate-cli"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "clap",
  "rustix",
@@ -470,7 +470,7 @@ dependencies = [
 
 [[package]]
 name = "termstate-conformance"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "proptest",
  "serde_json",
@@ -480,14 +480,14 @@ dependencies = [
 
 [[package]]
 name = "termstate-core"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "proptest",
 ]
 
 [[package]]
 name = "termstate-store"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "termstate-core",
 ]
