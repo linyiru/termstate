@@ -15,7 +15,16 @@ step() { printf '\n== %s\n' "$*"; }
 step fmt;      cargo fmt --all --check
 step clippy;   cargo clippy -q --workspace --all-targets --all-features -- -D warnings
 step test;     cargo test -q --workspace --all-features
-step doc;      RUSTDOCFLAGS="-D warnings" cargo doc -q --workspace --no-deps --all-features
+step doc
+# Not -q: cargo only reports an output filename collision (two targets writing
+# the same target/doc dir, which races) as a warning, so catch it here.
+doc_out="$(RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --all-features 2>&1)" \
+  || { printf '%s\n' "$doc_out"; exit 1; }
+if grep -q 'output filename collision' <<<"$doc_out"; then
+  grep -A3 'output filename collision' <<<"$doc_out"
+  echo "error: cargo doc output filename collision; give one target doc = false"
+  exit 1
+fi
 step no_std
 if rustup target list --installed 2>/dev/null | grep -q thumbv7em-none-eabihf; then
   cargo build -q -p termstate-core --no-default-features --target thumbv7em-none-eabihf
