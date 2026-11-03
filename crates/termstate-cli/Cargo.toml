@@ -14,6 +14,9 @@ categories = ["command-line-utilities"]
 [[bin]]
 name = "termstate"
 path = "src/main.rs"
+# The bin shares its name with the `termstate` lib, so both would write docs to
+# target/doc/termstate and race: https://github.com/rust-lang/cargo/issues/6313
+doc = false
 
 [dependencies]
 termstate-core = { workspace = true, features = ["alloc"] }
